@@ -1,0 +1,120 @@
+\subsection{Objective and Input Image}
+
+Task 3 requires extracting a sub-image that contains the complete character
+row
+\begin{equation}
+  \texttt{HD44780A00}
+  \label{eq:task3-target-string}
+\end{equation}
+The input is the $990\times367$ enhanced grayscale image selected in Task~1,
+the 2--98\% percentile-stretched output saved under \texttt{task\_1/outputs/}.
+The row of interest is the lower of the two text rows in the image; the upper
+row is the logo \texttt{T12}.  The extraction must therefore not only crop the
+correct vertical band but also decide the horizontal extent so that none of
+the ten characters is cut off.
+
+\subsection{Row Detection Method}
+
+The row was located with projection profiles, which are computed entirely with
+NumPy in the Task~3 script \path{task_3/task_3.py}.  The procedure has three
+stages.
+
+\subsubsection{Preprocessing for detection}
+
+The enhanced image is first smoothed with a $5\times5$ box filter (the filter
+implemented in Task~2) so that isolated bright speckles do not dominate the
+profiles.  A binary mask is then obtained with Otsu's thresholding, whose
+threshold $t^{*}$ maximises the between-class variance
+\begin{equation}
+  t^{*} =
+  \arg\max_{t}\;
+  \omega_0(t)\,\omega_1(t)\,
+  \bigl(\mu_0(t)-\mu_1(t)\bigr)^{2}
+  \label{eq:task3-otsu}
+\end{equation}
+where $\omega_0,\omega_1$ are the class probabilities and $\mu_0,\mu_1$ the
+class means on either side of threshold $t$.  For the smoothed enhanced image
+the Otsu threshold is $t^{*}=117$.
+
+\subsubsection{Coarse row band}
+
+The horizontal projection counts foreground pixels per image row,
+\begin{equation}
+  R(y)=\sum_{x} B(x,y) ,
+  \label{eq:task3-row-projection}
+\end{equation}
+and the vertical projection counts foreground pixels per column,
+\begin{equation}
+  C(x)=\sum_{y} B(x,y) .
+  \label{eq:task3-col-projection}
+\end{equation}
+Contiguous rows with $R(y)>25$ form candidate text bands.  The lowest band
+below $y=185$ is the required row, giving the coarse box
+$(x,y)\in[48,942)\times[198,336)$.
+
+\subsubsection{Band-adaptive refinement}
+
+The coarse box is looser than the true character extent because Otsu's mask
+also marks part of the bright ring-like background texture.  The box is
+therefore refined inside the coarse band: the band is thresholded again at its
+80th intensity percentile (measured here as 183.6), which lies above the
+textured background but below the character stroke cores.  Row spans shorter
+than 40 pixels are discarded, and column spans separated by up to 30 pixels
+are merged so that the spaces between characters do not split the row.  This
+yields the refined box $(x,y)\in[62,941)\times[204,332)$.
+
+\subsection{Extraction Result}
+
+A safety margin of 10 pixels is added on every side and clamped to the image
+bounds, giving the final extraction box
+$(x,y)\in[52,951)\times[194,342)$, i.e.\ a sub-image of
+$899\times148$ pixels.  \cref{fig:task3-region} shows the detected rectangle
+overlaid on the full enhanced image, and \cref{fig:task3-subimage} shows the
+extracted sub-image in both its original RGB form and the enhanced grayscale
+form that continues into the later processing stages.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task3_extraction_region.png}
+  \caption{Detected \texttt{HD44780A00} row with the extraction rectangle
+  drawn in red.  The rectangle contains a 10-pixel safety margin around the
+  refined character extent.}
+  \label{fig:task3-region}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{task3_subimage_rgb.png}
+    \caption{Extracted sub-image, original RGB colour.}
+    \label{fig:task3-subimage-rgb}
+  \end{subfigure}
+
+  \vspace{1ex}
+  \begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{task3_subimage.png}
+    \caption{Extracted sub-image, enhanced grayscale (Task~1 output).}
+    \label{fig:task3-subimage-gray}
+  \end{subfigure}
+  \caption{The $899\times148$ sub-image containing the complete
+  \texttt{HD44780A00} row, extracted with the box
+  $(x,y)\in[52,951)\times[194,342)$.}
+  \label{fig:task3-subimage}
+\end{figure}
+
+\subsection{Verification}
+
+The result was verified at the connected-component level.  Thresholding the
+$5\times5$-smoothed crop at intensity 140 and labelling the components
+recovers the ten characters as eight large stroke groups with areas between
+$2{,}756$ and $8{,}933$ pixels; every other component is smaller than
+$110$ pixels.  The labelled stroke groups span $x\in[60,941]$ and
+$y\in[205,341]$, which lies entirely inside the final extraction box.  All
+ten characters \texttt{H}, \texttt{D}, \texttt{4}, \texttt{4}, \texttt{7},
+\texttt{8}, \texttt{0}, \texttt{A}, \texttt{0}, \texttt{0} are therefore
+complete in the sub-image.  The \texttt{T12} logo, whose lowest stroke ends
+at $y=181$, is not included because the crop starts at $y=194$.
+
+\FloatBarrier

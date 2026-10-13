@@ -1,0 +1,134 @@
+\subsection{Objective}
+
+Task 5 requires determining the outline(s) of the characters in the image and
+displaying them.  The input is the binary image selected in Task~4
+(\texttt{task4\_binary.png}), in which the ten characters appear as bright
+strokes on a dark background.  Because the binary image already separates the
+characters from the background, outline detection reduces to following the
+border between foreground and background for every character-sized connected
+component.
+
+\subsection{Contour Following Method}
+
+The outlines were traced with Moore-neighbor contour following~\cite{contourtracing}, implemented
+from first principles in \texttt{common.py}.  For one 8-connected foreground
+component the algorithm works as follows.
+
+\begin{enumerate}
+  \item Start at the top-leftmost foreground pixel $b_0$; the backtrace pixel
+  $c_0$ is its western neighbour, which is background by construction.
+  \item Examine the eight neighbours of the current boundary pixel $b_k$ in
+  clockwise order, beginning just after the backtrace pixel $c_k$, until the
+  first foreground neighbour is found; it becomes $b_{k+1}$, and the
+  neighbour examined just before it becomes the new backtrace pixel
+  $c_{k+1}$.
+  \item Repeat until the start pixel is re-entered from the same direction
+  (Jacob's stopping criterion), which closes the contour.
+\end{enumerate}
+
+The walk is clockwise around the component, so the outer boundary is visited
+in order and its pixels can be encoded as an 8-direction Freeman chain code,
+with direction $0$ east, $1$ north-east, $2$ north, $3$ north-west, $4$ west,
+$5$ south-west, $6$ south, and $7$ south-east.  Characters such as
+\texttt{D}, \texttt{4}, \texttt{8}, \texttt{0}, and \texttt{A} also contain
+enclosed holes.  The holes are the background regions inside a component that
+do not touch the image border; each hole is identified by labelling the
+inverted component and traced with the same follower, so the method returns
+the outer outline \emph{and} every inner outline.
+
+Tracing is performed on a padded crop of each character.  Before plotting
+or exporting, a crop coordinate $(r,c)$ is converted back to the grayscale
+sub-image coordinate $(r-p+y_0,c-p+x_0)$, where $p=1$ is the padding and
+$(y_0,x_0)$ is the crop origin.  This places every outer and inner contour
+on its own character.  The script verifies that all trace coordinates lie
+inside the corresponding bounding box, that outer trace pixels are
+foreground, and that hole trace pixels are background.
+
+\subsection{Results}
+
+\cref{fig:task5-overlay} overlays the traced outlines on the grayscale
+sub-image: solid curves are outer boundaries and dashed curves are hole
+boundaries, with one colour per character.  \cref{fig:task5-mask} shows the
+boundary pixels alone, and \cref{fig:task5-example} zooms into the second
+\texttt{4}, marking the trace start and the clockwise walking direction.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task5_outlines.png}
+  \caption{Traced outlines overlaid on the grayscale sub-image.  Solid lines
+  are outer boundaries; dashed lines are hole boundaries.}
+  \label{fig:task5-overlay}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \begin{subfigure}{0.66\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{task5_outline_mask.png}
+    \caption{Boundary pixels only.}
+    \label{fig:task5-mask}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{task5_example_trace.png}
+    \caption{Zoom on the second \texttt{4}: start point and trace direction.}
+    \label{fig:task5-example}
+  \end{subfigure}
+  \caption{Outline detection outputs.}
+  \label{fig:task5-figures}
+\end{figure}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Per-character outline statistics.  ``Expected'' is the ground-truth
+  glyph in \texttt{HD44780A00}.}
+  \label{tab:task5-outlines}
+  \begin{tabular}{clrrl}
+    \toprule
+    Order & Expected & Outer length & Holes & Hole lengths \\
+    \midrule
+    1 & \texttt{H} & 619 & 0 & -- \\
+    2 & \texttt{D} & 379 & 1 & 270 \\
+    3 & \texttt{4} & 368 & 1 & 164 \\
+    4 & \texttt{4} & 340 & 1 & 172 \\
+    5 & \texttt{7} & 408 & 0 & -- \\
+    6 & \texttt{8} & 515 & 1 & 135 \\
+    7 & \texttt{0} & 329 & 3 & 1, 2, 236 \\
+    8 & \texttt{A} & 364 & 1 & 130 \\
+    9 & \texttt{0} & 332 & 2 & 229, 3 \\
+    10 & \texttt{0} & 325 & 1 & 230 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Analysis}
+
+The follower returns a closed outer boundary for all ten characters; the total
+outer boundary length of the row is $3{,}979$ pixels.  The hole counts agree
+with the topology of most glyphs: \texttt{H} and \texttt{7} have no holes, and
+\texttt{D}, \texttt{4}, and \texttt{A} each have one enclosed region.
+
+Three details show where the binarization stage leaves its fingerprint on the
+outlines.  First, the \texttt{8} yields one hole instead of the two expected
+for its two loops: in the thresholded image a stroke gap opens the bottom
+loop interior to the background, so only the top loop remains enclosed.
+Second, the first \texttt{0} reports two tiny holes of $1$--$2$ pixels beside
+its main hole, and the middle \texttt{0} one of $3$ pixels: these are spurious
+holes created by small stroke gaps, not real openings of the glyphs.  Third,
+all ten retained components still admit closed outer contours.  This does
+not mean that the thresholding defects leave the glyph shapes unchanged:
+the traced boundaries describe the selected binary mask, and the missing
+loop of \texttt{8} changes its topology.  Hole counts therefore require
+inspection before they are used as recognition features.
+
+The JSON file \path{task_5/outputs/task5_outlines.json} stores the complete
+ordered outer and hole traces, their starting pixels, and their full Freeman
+chain codes.  All trace and start coordinates use $(\mathrm{row},
+\mathrm{column})$ in the Task~3 sub-image.  A non-degenerate chain includes
+the final step back to its start; a single-pixel hole is represented by its
+start and an empty chain.  These data reproduce the boundary-pixel mask
+without re-running the follower.  The earlier chain-code prefix and
+statistics remain available as compact summaries.
+
+\FloatBarrier

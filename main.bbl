@@ -1,0 +1,85 @@
+\begin{thebibliography}{10}
+
+\bibitem{gonzalez2018}
+Rafael~C. Gonzalez and Richard~E. Woods.
+\newblock {\em Digital Image Processing}.
+\newblock Pearson, 4 edition, 2018.
+
+\bibitem{otsu1979}
+Nobuyuki Otsu.
+\newblock A threshold selection method from gray-level histograms.
+\newblock {\em IEEE Transactions on Systems, Man, and Cybernetics},
+  9(1):62--66, 1979.
+\newblock \url{https://doi.org/10.1109/TSMC.1979.4310076}.
+
+\bibitem{contourtracing}
+Abeer~George Ghuneim.
+\newblock Contour tracing: Moore-neighbor tracing.
+\newblock ImageProcessingPlace tutorial.
+\newblock
+  \url{https://www.imageprocessingplace.com/downloads_V3/root_downloads/tutorials/contour_tracing_Abeer_George_Ghuneim/moore.html}.
+  Accessed 13 October 2026.
+
+\bibitem{batchnorm}
+Sergey Ioffe and Christian Szegedy.
+\newblock Batch normalization: Accelerating deep network training by reducing
+  internal covariate shift.
+\newblock In {\em Proceedings of the 32nd International Conference on Machine
+  Learning}, pages 448--456, 2015.
+\newblock \url{https://arxiv.org/abs/1502.03167}.
+
+\bibitem{adamw}
+Ilya Loshchilov and Frank Hutter.
+\newblock Decoupled weight decay regularization.
+\newblock In {\em International Conference on Learning Representations}, 2019.
+\newblock \url{https://arxiv.org/abs/1711.05101}.
+
+\bibitem{dropout}
+Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya Sutskever, and Ruslan
+  Salakhutdinov.
+\newblock Dropout: A simple way to prevent neural networks from overfitting.
+\newblock {\em Journal of Machine Learning Research}, 15:1929--1958, 2014.
+\newblock \url{https://jmlr.org/papers/v15/srivastava14a.html}.
+
+\bibitem{pytorch}
+Adam Paszke, Sam Gross, Francisco Massa, et~al.
+\newblock {PyTorch}: An imperative style, high-performance deep learning
+  library.
+\newblock In {\em Advances in Neural Information Processing Systems},
+  volume~32, 2019.
+\newblock \url{https://pytorch.org/}.
+
+\bibitem{pillow}
+{Pillow contributors}.
+\newblock {Pillow} documentation.
+\newblock Official documentation.
+\newblock \url{https://pillow.readthedocs.io/en/stable/}. Accessed 13 October
+  2026.
+
+\bibitem{numpy}
+Charles~R. Harris, K.~Jarrod Millman, St{\'e}fan~J. van~der Walt, et~al.
+\newblock Array programming with {NumPy}.
+\newblock {\em Nature}, 585:357--362, 2020.
+\newblock \url{https://numpy.org/}.
+
+\bibitem{matplotlib}
+John~D. Hunter.
+\newblock {Matplotlib}: A {2D} graphics environment.
+\newblock {\em Computing in Science \& Engineering}, 9(3):90--95, 2007.
+\newblock \url{https://matplotlib.org/}.
+
+\bibitem{torchvision}
+{PyTorch contributors}.
+\newblock Torchvision documentation.
+\newblock Official documentation.
+\newblock \url{https://pytorch.org/vision/stable/}. Included in the supplied
+  environment; not required by the network implementation. Accessed 13 October
+  2026.
+
+\bibitem{gelu}
+Dan Hendrycks and Kevin Gimpel.
+\newblock Gaussian error linear units ({GELUs}).
+\newblock arXiv:1606.08415, 2016.
+\newblock \url{https://arxiv.org/abs/1606.08415}.
+
+\end{thebibliography}

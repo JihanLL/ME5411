@@ -1,0 +1,11 @@
+order,expected,x0,y0,x1,y1,width,height,area,centroid_x,centroid_y,crop_gray,crop_binary
+1,H,8,19,91,138,84,120,3836,49.9,79.7,chars/char_01_gray.png,chars/char_01_bin.png
+2,D,101,10,185,140,85,131,4149,142.0,77.8,chars/char_02_gray.png,chars/char_02_bin.png
+3,4,190,18,269,144,80,127,3485,237.0,78.2,chars/char_03_gray.png,chars/char_03_bin.png
+4,4,280,19,361,134,82,116,3269,324.2,78.2,chars/char_04_gray.png,chars/char_04_bin.png
+5,7,372,10,450,135,79,126,2719,414.1,59.3,chars/char_05_gray.png,chars/char_05_bin.png
+6,8,453,19,540,135,88,117,4336,494.1,78.2,chars/char_06_gray.png,chars/char_06_bin.png
+7,0,544,16,626,138,83,123,3859,586.3,75.6,chars/char_07_gray.png,chars/char_07_bin.png
+8,A,630,19,713,132,84,114,3103,673.8,80.7,chars/char_08_gray.png,chars/char_08_bin.png
+9,0,716,15,801,135,86,121,3980,758.2,74.5,chars/char_09_gray.png,chars/char_09_bin.png
+10,0,808,13,889,136,82,124,3997,849.6,74.4,chars/char_10_gray.png,chars/char_10_bin.png

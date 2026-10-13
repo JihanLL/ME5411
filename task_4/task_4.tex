@@ -1,0 +1,86 @@
+\subsection{Objective}
+
+Task 4 requires converting the Task~3 sub-image of size $899\times148$ into a
+binary image and showing the intermediate results.  Three thresholding schemes
+were compared, and the selected method keeps the ten characters as separate
+foreground components while rejecting most of the textured background.
+
+\subsection{Binarization Methods Compared}
+
+\begin{enumerate}
+  \item \textbf{Global Otsu thresholding.}  Otsu's method~\cite{otsu1979} chooses the level
+  $T^{*}$ that maximizes the between-class variance of the intensity
+  histogram:
+  \begin{equation}
+    T^{*} = \arg\max_{T}\,
+    w_{0}(T)\,w_{1}(T)\bigl(\mu_{0}(T)-\mu_{1}(T)\bigr)^{2},
+    \qquad B(x,y) = I(x,y) > T^{*},
+    \label{eq:task4-otsu}
+  \end{equation}
+  where $w_{k}$ and $\mu_{k}$ are the weight and mean of each class.  A single
+  global level is simple, but it cannot adapt to the spatially varying
+  background texture.
+
+  \item \textbf{Global Otsu after smoothing and morphological opening.}  The
+  sub-image is first smoothed with the $5\times5$ box filter from Task~2, then
+  thresholded globally, and finally opened with a $3\times3$ structuring
+  element (an erosion followed by a dilation) to delete small speckle
+  components.
+
+  \item \textbf{Local adaptive mean thresholding.}  The threshold becomes a
+  slowly varying field based on the local mean over a $41\times41$ window:
+  \begin{equation}
+    T(x,y) = \mu_{41}(x,y) + 25,
+    \qquad B(x,y) = I(x,y) > T(x,y).
+    \label{eq:task4-adaptive}
+  \end{equation}
+  After $5\times5$ smoothing, a pixel is foreground only when it is more than
+  25 grey levels brighter than its local surroundings.  This is well matched to
+  bright characters on a dark, locally textured background.
+\end{enumerate}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task4_comparison.png}
+  \caption{The Task~3 sub-image and the three binarization candidates.  White
+  pixels are foreground.}
+  \label{fig:task4-comparison}
+\end{figure}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Task 4 binarization comparison.}
+  \label{tab:task4-metrics}
+  \begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm}cccc}
+    \toprule
+    Method & Foreground (\%) & Components & Character comp. & Max.\ noise (px) \\
+    \midrule
+    Global Otsu, $T=125$ & 34.00 & 296 & 7 & 131 \\
+    Smoothed Otsu $+$ open $3\times3$ & 34.31 & 32 & 7 & 135 \\
+    Adaptive $41\times41$, $+25$ (chosen) & 30.72 & 126 & \textbf{10} & 224 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Selected Method and Analysis}
+
+Global Otsu thresholding at $T=125$ performs poorly here.  It labels 34.0\% of
+the image as foreground because the bright ring texture crosses the single
+global level, producing 296 connected components, and its character strokes
+merge into only 7 character-sized components.  Smoothing followed by opening
+reduces the component count to 32, but the characters remain merged and the
+largest speckles survive.
+
+The adaptive mean threshold is selected as the final method.  It labels 30.7\%
+of the image as foreground and produces 126 components, of which exactly 10
+have an area above 500 pixels; these ten components correspond one-to-one to
+the ten characters of \texttt{HD44780A00} as read left to right.  The remaining
+116 components are noise smaller than 225 pixels, which are easy to remove with
+an area criterion in Task~6.  Unlike Otsu, the local criterion does not require
+one grey level to separate character from texture across the whole image;
+instead it marks only pixels that stand out against their own neighbourhood.
+
+The selected binary image is saved as \texttt{task\_4/outputs/task4\_binary.png}
+and becomes the input for the outline detection and segmentation tasks.
+
+\FloatBarrier

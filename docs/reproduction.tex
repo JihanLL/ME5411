@@ -1,0 +1,134 @@
+The Python implementation is reproduced from the repository root (the
+directory containing \path{main.tex} and \path{common.py}) as follows.
+Each task has an entry-point script, a report fragment, implementation notes,
+and an \path{outputs/} directory.
+
+\begin{enumerate}[leftmargin=*,itemsep=0.5em]
+\item \textbf{Check the supplied data.}
+Place \path{Test_Image_2026.bmp} in \path{dataset_2026/}, alongside the seven
+class directories \texttt{0, 4, 7, 8, A, D, H}.  Each class contains 1,016
+PNG images (7,112 images in total), with source dimensions $128\times128$.
+Keep the BMP and its derived crops outside the labelled directories: they are
+reserved for Figure~1 inference.
+
+\item \textbf{Create the software environment.}
+Install Conda, then execute:
+{\small
+\begin{verbatim}
+conda env create -f task_7/environment.yml
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate cvtask
+\end{verbatim}
+}
+If \texttt{cvtask} already exists, replace the creation command with
+\texttt{conda env update -n cvtask -f task\_7/environment.yml}.
+The environment file pins Python~3.8, PyTorch~2.0.0, torchvision~0.15.1~\cite{torchvision},
+CUDA runtime~11.8, NumPy~1.24.2, Pillow~9.4.0, and Matplotlib~3.7.1.
+The measured runtime was Ubuntu~20.04, Python~3.8.10, and
+PyTorch~2.0.0+cu118 on an NVIDIA GeForce RTX~4080 SUPER.
+Tasks~1--6 run on the CPU.  Task~7 automatically selects CUDA if available,
+otherwise the CPU; prefixing its command with
+\texttt{CUDA\_VISIBLE\_DEVICES=""} forces CPU execution.  Timings are
+device-dependent.  Plots use the Agg backend and require no display server.
+
+\item \textbf{Run every image-processing stage in order.}
+{\small
+\begin{verbatim}
+python task_1/task_1.py
+python task_2/task_2.py
+python task_3/task_3.py
+python task_4/task_4.py
+python task_5/task_5.py
+python task_6/task_6.py
+\end{verbatim}
+}
+These scripts create or replace files in their fixed
+\path{task_N/outputs/} directories.  Task~1 reads the BMP and saves
+\path{task1_percentile_stretch_p02_p98.png} for Tasks~2 and~3.
+Task~2 is the filter-size comparison branch; Task~3 uses the Task~1 enhanced
+image and original BMP to save \path{task_3/outputs/task3_subimage.png}.
+Task~4 produces \path{task_4/outputs/task4_binary.png} and the Otsu comparison.
+Tasks~5 and~6 read the Task~3 grayscale image and Task~4 binary results.
+Task~5 writes outline figures and JSON contour records.
+Task~6 writes \path{task6_components.csv} and ten pairs of
+\path{task_6/outputs/chars/char_*_gray.png} and \path{char_*_bin.png} crops;
+these must exist before Task~7 to obtain the Figure~1 recognition results.
+
+\item \textbf{Run the complete learning experiment.}
+Use a separate directory to preserve the report's supplied results:
+{\small
+\begin{verbatim}
+python task_7/task_7.py --data dataset_2026 \
+  --output task_7/outputs_reproduction
+\end{verbatim}
+}
+The default seed is 20261013, batch size 128, tuning limit 18 epochs,
+early-stopping patience 5, and data-loader workers 0.  The full run performs
+the $32/48$-pixel and $10^{-3}/3\times10^{-4}$ learning-rate grid, chooses
+models on validation data, refits on the full 75\% training pool using the
+selected validation epoch, then evaluates the 25\% test partition and the
+target crops.  It uses one CNN and three MLP regression members.
+For a short pipeline check, use:
+{\small
+\begin{verbatim}
+python task_7/task_7.py --data dataset_2026 \
+  --smoke --output task_7/outputs_smoke
+\end{verbatim}
+}
+Smoke mode uses one input size, one learning rate, at most two tuning epochs,
+and one MLP; it is not the reported experiment.  Always specify the smoke
+directory because the default output is \path{task_7/outputs/}.
+The main artifacts are \path{split_summary.json} and
+\path{split_manifest.csv} (partition audit), \path{tuning_results.csv} and
+\path{tuning_curves.png} (model selection), \path{task7_metrics.json} and
+\path{method_comparison.csv} (results and timing), two confusion-matrix PNGs,
+\path{*.pt} checkpoints, and \path{target_predictions.json}.
+The report reads its formal figures from \path{task_7/outputs/}; independent
+reproduction and smoke runs leave these unchanged.  Replacing the formal
+directory requires updating the report's numerical tables to match the new
+metrics.  Exact numerical agreement and timing across different software or
+hardware are not guaranteed.
+
+To repeat target inference from the supplied models without retraining, copy
+\path{task_7/outputs/} to a new \path{task_7/outputs_inference_check/}
+directory, then run:
+{\small
+\begin{verbatim}
+python task_7/task_7.py --data dataset_2026 --inference-only \
+  --output task_7/outputs_inference_check
+\end{verbatim}
+}
+This mode needs both crop variants, the dataset, split manifest, and copied
+checkpoints.  It fits foreground geometry from training rows only and updates
+target inference while preserving test metrics and the grayscale baseline.
+
+\item \textbf{Compile the report.}
+Install XeLaTeX, latexmk, and the recommended/extra LaTeX packages.
+On Ubuntu, run:
+{\small
+\begin{verbatim}
+sudo apt-get install latexmk texlive-xetex texlive-latex-extra \
+  texlive-latex-recommended texlive-fonts-recommended \
+  curl cabextract fontconfig
+\end{verbatim}
+}
+Omit \texttt{sudo} when running as root.  The provided font installer verifies
+and installs the actual Arial family (regular, bold, italic, and bold italic)
+under \path{~/.local/share/fonts/msttcorefonts/} by default, without root
+privileges; \texttt{REPORT\_FONT\_DIR} can override the directory.
+With all task figures present, execute:
+{\small
+\begin{verbatim}
+bash scripts/install_report_fonts.sh
+fc-match Arial
+latexmk -xelatex -interaction=nonstopmode -halt-on-error \
+  -file-line-error main.tex
+\end{verbatim}
+}
+The font check must resolve to Arial.  The build also runs BibTeX for the
+references.  The output is \path{main.pdf}.  The project \path{.latexmkrc} removes auxiliary
+build files after a successful build while retaining the PDF.
+\end{enumerate}
+
+\noindent\path{README.md} contains the full directory dependency table,
+artifact inventory, version-check command, and build troubleshooting command.

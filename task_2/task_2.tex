@@ -1,0 +1,101 @@
+\subsection{Objective}
+
+Task 2 requires implementing a $5\times5$ averaging filter, applying it to the
+image, trying additional filter sizes, and comparing the smoothing results.
+Because Task 1 selected the 2--98\% percentile-stretched image as the preferred
+input for the downstream stages, every smoothing experiment here operates on
+that enhanced grayscale image.
+
+\subsection{Implemented Averaging Filter}
+
+An averaging (box) filter~\cite{gonzalez2018} of size $s\times s$ replaces each pixel with the mean
+of the $s\times s$ neighbourhood centred on it:
+\begin{equation}
+  I_{\mathrm{out}}(x,y) =
+  \frac{1}{s^{2}}
+  \sum_{i=-r}^{r}\sum_{j=-r}^{r} I_{\mathrm{in}}(x+i,y+j),
+  \qquad r=\frac{s-1}{2}.
+  \label{eq:task2-box}
+\end{equation}
+The implementation exploits the separability of the box kernel and computes the
+sliding sums with a summed-area table, so the running time is $O(hw)$
+independent of $s$ rather than $O(hw s^{2})$ for a naive sliding window.  The
+filter is implemented from first principles with NumPy only in
+\texttt{common.box\_filter}; boundary pixels are handled by replicating the
+edge values.  The required $5\times5$ size was implemented together with four
+additional odd sizes, $3\times3$, $7\times7$, $11\times11$, and $15\times15$, to
+make the smoothing--detail trade-off visible.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task2_comparison.png}
+  \caption{The enhanced image and the box-filtered results for five filter
+  sizes.  All images use the same display range of 0--255.}
+  \label{fig:task2-comparison}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{task2_zoom.png}
+  \caption{Zoomed view of the \texttt{HD4} characters.  Larger kernels remove
+  more background texture but progressively blur the stroke edges.}
+  \label{fig:task2-zoom}
+\end{figure}
+
+\subsection{Evaluation Protocol}
+
+The smoothing results were compared both visually and quantitatively.  Three
+values were measured on fixed image regions so that all filter sizes are judged
+identically:
+
+\begin{itemize}
+  \item \textbf{Background standard deviation}: the pooled standard deviation
+  of five fixed character-free background patches.  A smaller value means the
+  ring-like texture and speckle noise were suppressed more strongly.
+  \item \textbf{Foreground gradient}: the mean gradient magnitude over five
+  fixed character-stroke patches.  A smaller value means the stroke edges were
+  blurred more, i.e.\ more detail was lost.
+  \item \textbf{PSNR}: peak signal-to-noise ratio relative to the unfiltered
+  enhanced image, measuring how much the whole image changed.
+\end{itemize}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Task 2 quantitative comparison of the averaging-filter sizes.}
+  \label{tab:task2-metrics}
+  \begin{tabular}{lccc}
+    \toprule
+    Filter & Background std. & Foreground gradient & PSNR (dB) \\
+    \midrule
+    None (enhanced baseline) & 33.42 & 20.18 & $\infty$ \\
+    $3\times3$ box & 29.56 & 14.75 & 28.50 \\
+    $5\times5$ box & 26.46 & 11.00 & 24.03 \\
+    $7\times7$ box & 24.09 & 9.44 & 21.95 \\
+    $11\times11$ box & 19.91 & 7.86 & 20.17 \\
+    $15\times15$ box & 16.36 & 6.75 & 18.90 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Result Analysis}
+
+The measurements in \cref{tab:task2-metrics} show a clear monotonic trade-off.
+As the kernel grows, the background standard deviation falls from 33.42 to
+16.36, confirming stronger noise suppression, but the foreground gradient also
+falls from 20.18 to 6.75, meaning the character edges are increasingly blurred.
+The $3\times3$ filter is too weak: it reduces the background noise by only
+11.5\% while the largest $15\times15$ filter removes 51.0\% of the noise but
+erases 66.5\% of the edge sharpness.  In \cref{fig:task2-zoom}, the thin
+strokes of the characters visibly soften at $11\times11$ and start to blend
+with the background at $15\times15$; such damage would later break or merge
+character strokes during thresholding.
+
+The required $5\times5$ filter is the best compromise for this image.  It
+reduces the background standard deviation by 20.8\% while retaining 54.5\% of
+the edge gradient magnitude, so isolated speckles are suppressed without
+destroying the thin character strokes.  Its PSNR of 24.03\,dB confirms that the
+change is moderate.  This $5\times5$ smoothing was therefore reused in
+Task~3 for row localization and in Task~4 before thresholding, keeping the
+image-processing pipeline consistent.
+
+\FloatBarrier

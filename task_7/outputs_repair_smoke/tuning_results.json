@@ -1,0 +1,32 @@
+[
+  {
+    "model_kind": "cnn",
+    "run_seed": 20264313,
+    "input_size": 32,
+    "learning_rate": 0.001,
+    "validation_accuracy": 0.9473684210526315,
+    "validation_loss": 0.3366418927907944,
+    "best_epoch": 2,
+    "epochs_run": 2,
+    "training_seconds": 0.8157422380027128,
+    "normalization": {
+      "mean": 0.8240094780921936,
+      "std": 0.3436231315135956
+    }
+  },
+  {
+    "model_kind": "mlp",
+    "run_seed": 20264314,
+    "input_size": 32,
+    "learning_rate": 0.001,
+    "validation_accuracy": 0.9680451127819549,
+    "validation_loss": 0.01706994790583849,
+    "best_epoch": 2,
+    "epochs_run": 2,
+    "training_seconds": 0.27053882999462076,
+    "normalization": {
+      "mean": 0.8240094780921936,
+      "std": 0.3436231315135956
+    }
+  }
+]

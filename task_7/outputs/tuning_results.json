@@ -1,0 +1,122 @@
+[
+  {
+    "model_kind": "cnn",
+    "input_size": 32,
+    "learning_rate": 0.001,
+    "validation_accuracy": 0.9962406015037594,
+    "validation_loss": 0.01573290831098954,
+    "best_epoch": 18,
+    "epochs_run": 18,
+    "training_seconds": 6.191113045002567,
+    "normalization": {
+      "mean": 0.8240094780921936,
+      "std": 0.3436231315135956
+    },
+    "run_seed": 20264313
+  },
+  {
+    "model_kind": "cnn",
+    "input_size": 32,
+    "learning_rate": 0.0003,
+    "validation_accuracy": 0.9887218045112782,
+    "validation_loss": 0.1412696565190951,
+    "best_epoch": 7,
+    "epochs_run": 12,
+    "training_seconds": 3.360441199998604,
+    "normalization": {
+      "mean": 0.8240094780921936,
+      "std": 0.3436231315135956
+    },
+    "run_seed": 20264242
+  },
+  {
+    "model_kind": "mlp",
+    "input_size": 32,
+    "learning_rate": 0.001,
+    "validation_accuracy": 1.0,
+    "validation_loss": 0.005513819400221109,
+    "best_epoch": 18,
+    "epochs_run": 18,
+    "training_seconds": 2.4061640389991226,
+    "normalization": {
+      "mean": 0.8240094780921936,
+      "std": 0.3436231315135956
+    },
+    "run_seed": 20264314
+  },
+  {
+    "model_kind": "mlp",
+    "input_size": 32,
+    "learning_rate": 0.0003,
+    "validation_accuracy": 1.0,
+    "validation_loss": 0.00788148958235979,
+    "best_epoch": 17,
+    "epochs_run": 18,
+    "training_seconds": 2.374263505000272,
+    "normalization": {
+      "mean": 0.8240094780921936,
+      "std": 0.3436231315135956
+    },
+    "run_seed": 20264243
+  },
+  {
+    "model_kind": "cnn",
+    "input_size": 48,
+    "learning_rate": 0.001,
+    "validation_accuracy": 0.9981203007518797,
+    "validation_loss": 0.04155314341187477,
+    "best_epoch": 15,
+    "epochs_run": 18,
+    "training_seconds": 5.193834727993817,
+    "normalization": {
+      "mean": 0.8239761590957642,
+      "std": 0.3558235764503479
+    },
+    "run_seed": 20265913
+  },
+  {
+    "model_kind": "cnn",
+    "input_size": 48,
+    "learning_rate": 0.0003,
+    "validation_accuracy": 0.9868421052631579,
+    "validation_loss": 0.09615956495205562,
+    "best_epoch": 18,
+    "epochs_run": 18,
+    "training_seconds": 4.718950166992727,
+    "normalization": {
+      "mean": 0.8239761590957642,
+      "std": 0.3558235764503479
+    },
+    "run_seed": 20265842
+  },
+  {
+    "model_kind": "mlp",
+    "input_size": 48,
+    "learning_rate": 0.001,
+    "validation_accuracy": 1.0,
+    "validation_loss": 0.004570556882147987,
+    "best_epoch": 17,
+    "epochs_run": 18,
+    "training_seconds": 2.2548626820062054,
+    "normalization": {
+      "mean": 0.8239761590957642,
+      "std": 0.3558235764503479
+    },
+    "run_seed": 20265914
+  },
+  {
+    "model_kind": "mlp",
+    "input_size": 48,
+    "learning_rate": 0.0003,
+    "validation_accuracy": 0.9981203007518797,
+    "validation_loss": 0.007365139822165172,
+    "best_epoch": 16,
+    "epochs_run": 18,
+    "training_seconds": 2.2552817999967374,
+    "normalization": {
+      "mean": 0.8239761590957642,
+      "std": 0.3558235764503479
+    },
+    "run_seed": 20265843
+  }
+]

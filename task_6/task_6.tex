@@ -1,0 +1,138 @@
+\subsection{Objective}
+
+Task 6 requires segmenting the characters so that the different characters
+are separated as clearly as possible and each one is individually labelled.
+The input is the binary image selected in Task~4, in which the ten characters
+of \texttt{HD44780A00} already appear as ten separate bright regions on a dark
+background.  The segmentation therefore has three steps: remove the residual
+noise, label every remaining connected component, and order the ten labelled
+characters from left to right.
+
+\subsection{Segmentation Method}
+
+\subsubsection{Connected-component labelling}
+
+Foreground components were labelled with the classic two-pass
+union-find algorithm~\cite{gonzalez2018}, implemented in \texttt{common.py}.  In the first pass the
+image is scanned row by row; every foreground pixel takes the smallest label
+among its already-visited 8-neighbours, and the corresponding labels are
+merged in a union-find structure.  In the second pass every label is replaced
+by the root of its equivalence class.  The result is a label image in which
+each 8-connected foreground region has a unique label.
+
+\subsubsection{Noise removal by area}
+
+Task~4 reported 126 components, of which 10 are characters and 116 are texture
+residues.  The largest noise component has 224 pixels while the smallest
+character has $2{,}719$ pixels, so an area criterion removes all noise without
+touching any character:
+\begin{equation}
+  \text{keep component } C \iff \lvert C\rvert \geq 300 .
+  \label{eq:task6-area}
+\end{equation}
+The threshold is deliberately placed in the wide gap between the two
+populations, which makes the choice insensitive to small image changes.
+
+\subsubsection{Left-to-right ordering}
+
+The surviving components are sorted by their leftmost column so that label $1$
+is the leftmost character and label $10$ the rightmost, matching the reading
+order of \texttt{HD44780A00}.
+
+\subsection{Results}
+
+\cref{fig:task6-labeled} shows the ten labelled characters over the grayscale
+sub-image, and \cref{fig:task6-boxes} adds the bounding box of every label.
+The boxes are $79$--$88$ pixels wide and $114$--$131$ pixels high, so the
+characters are remarkably uniform in size.  \cref{fig:task6-crops} shows the
+ten extracted character crops that are saved for the classification stage.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task6_labeled.png}
+  \caption{Segmented characters labelled $1$--$10$ in reading order.}
+  \label{fig:task6-labeled}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task6_boxes.png}
+  \caption{Bounding boxes of the ten segmented characters.}
+  \label{fig:task6-boxes}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task6_crops.png}
+  \caption{The ten extracted character crops (labels $1$--$10$).}
+  \label{fig:task6-crops}
+\end{figure}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Segmentation result.  Bounding boxes are given in sub-image pixel
+  coordinates.}
+  \label{tab:task6-components}
+  \begin{tabular}{clccc}
+    \toprule
+    Label & Glyph & Bounding box $(x_{0},y_{0})$--$(x_{1},y_{1})$ &
+    Size ($w\times h$) & Area (px) \\
+    \midrule
+    1 & \texttt{H} & (8, 19)--(91, 138) & $84\times120$ & 3836 \\
+    2 & \texttt{D} & (101, 10)--(185, 140) & $85\times131$ & 4149 \\
+    3 & \texttt{4} & (190, 18)--(269, 144) & $80\times127$ & 3485 \\
+    4 & \texttt{4} & (280, 19)--(361, 134) & $82\times116$ & 3269 \\
+    5 & \texttt{7} & (372, 10)--(450, 135) & $79\times126$ & 2719 \\
+    6 & \texttt{8} & (453, 19)--(540, 135) & $88\times117$ & 4336 \\
+    7 & \texttt{0} & (544, 16)--(626, 138) & $83\times123$ & 3859 \\
+    8 & \texttt{A} & (630, 19)--(713, 132) & $84\times114$ & 3103 \\
+    9 & \texttt{0} & (716, 15)--(801, 135) & $86\times121$ & 3980 \\
+    10 & \texttt{0} & (808, 13)--(889, 136) & $82\times124$ & 3997 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Why Component Labelling Rather than Projection Splitting}
+
+The horizontal gaps between adjacent bounding boxes are only
+$9$, $4$, $10$, $10$, $2$, $3$, $3$, $2$, and $6$ pixels, so several
+characters almost touch.  A purely projection-based splitter would therefore
+be fragile.  The effect is visible when the same labelling is applied to the
+global-Otsu binary from Task~4: there the \texttt{D} and first \texttt{4}
+merge, the \texttt{8} and \texttt{0} merge, and the two final \texttt{0}s
+merge, leaving only 7 groups instead of 10
+(\cref{fig:task6-comparison}).  The adaptive binary keeps the strokes
+separated, so the simple component-labelling segmentation already returns
+exactly one region per character, and no further de-merging or split heuristics
+are needed.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task6_segmentation_comparison.png}
+  \caption{Character groups found on the global-Otsu binary (7 groups) and on
+  the selected adaptive binary (10 groups).  Merged neighbours are visible as
+  boxes that span two characters.}
+  \label{fig:task6-comparison}
+\end{figure}
+
+\subsection{Analysis}
+
+The segmentation is exact for this row: after noise removal exactly ten
+components remain, and reading the components left to right reproduces
+\texttt{H D 4 4 7 8 0 A 0 0}.  The result inherits two properties from the
+binarization stage.  First, the \texttt{8} remains one component even though
+its bottom loop is partly open (Task~5), because the stroke itself is still
+connected; area filtering does not break it further.  Second, the three
+\texttt{0}s have slightly different areas ($3{,}859$, $3{,}980$, $3{,}997$
+pixels) because of local stroke-thickness variation, which shows why a fixed
+area interval rather than a single expected size is used to accept a
+component.
+
+The cleaned binary is saved as \path{task_6/outputs/task6_cleaned_binary.png},
+and one padded grayscale and binary crop per character is saved under
+\path{task_6/outputs/chars/} together with
+\path{task_6/outputs/task6_components.json}.  These crops are the natural
+input of the CNN and non-CNN classifiers in Task~7, whose ground-truth label
+order is exactly the known string \texttt{HD44780A00}.
+
+\FloatBarrier

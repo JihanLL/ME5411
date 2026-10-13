@@ -1,0 +1,33 @@
+{
+  "input_image": "dataset_2026/Test_Image_2026.bmp",
+  "enhanced_image": "task_1/outputs/task1_percentile_stretch_p02_p98.png",
+  "image_size_px": [
+    990,
+    367
+  ],
+  "otsu_threshold": 117.0,
+  "coarse_box": [
+    48,
+    198,
+    942,
+    336
+  ],
+  "detected_row_box": [
+    62,
+    204,
+    941,
+    332
+  ],
+  "margin_px": 10,
+  "extraction_box": [
+    52,
+    194,
+    951,
+    342
+  ],
+  "subimage_size_px": [
+    899,
+    148
+  ],
+  "target_string": "HD44780A00"
+}

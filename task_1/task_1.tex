@@ -1,0 +1,160 @@
+\subsection{Objective and Input Image}
+
+Task 1 requires displaying the original chip image, applying contrast
+enhancement, and commenting on the result.  The input image is an RGB bitmap of
+size $990\times367$ pixels.  Its RGB pixel range is 41--255, while the grayscale
+luminance range is approximately 41.91--252.31.  The grayscale median is 82.91,
+and the 2nd and 98th percentiles are 63.63 and 156.00 respectively.
+
+The original image in \cref{fig:task1-comparison} shows bright characters on a
+dark, non-uniform background.  The main difficulty is not low brightness alone:
+the background contains dense ring-like texture and bright speckle noise.  A
+useful enhancement method must therefore improve the character-to-background
+separation without making the background texture look like character strokes.
+
+\subsection{Implemented Enhancement Methods}
+
+The enhancement operators follow standard digital image-processing
+definitions~\cite{gonzalez2018}; their experiment code was implemented in Python
+in \texttt{task\_1/task\_1.py}.  The
+RGB image was first converted to grayscale luminance by
+\begin{equation}
+  Y = 0.299R + 0.587G + 0.114B .
+  \label{eq:task1-grayscale}
+\end{equation}
+The grayscale image is the baseline for comparison.  Three contrast enhancement
+methods were tested on the same baseline:
+
+\begin{enumerate}
+  \item \textbf{2--98\% percentile stretching.}  The 2nd percentile is mapped to
+  0 and the 98th percentile is mapped to 255:
+  \begin{equation}
+    I_{\mathrm{out}} =
+    \mathrm{clip}\!\left(
+      255\frac{I-p_{2}}{p_{98}-p_{2}},\,0,\,255
+    \right).
+    \label{eq:task1-percentile}
+  \end{equation}
+  This ignores extreme dark and bright outliers and uses the available grayscale
+  range more aggressively.
+
+  \item \textbf{Gamma correction.}  A power-law transform with $\gamma=1.5$ was
+  applied:
+  \begin{equation}
+    I_{\mathrm{out}} = 255\left(\frac{I}{255}\right)^{1.5}.
+    \label{eq:task1-gamma}
+  \end{equation}
+  Since $\gamma>1$, mid-level background pixels are darkened.  This tests whether
+  suppressing the background improves character visibility.
+
+  \item \textbf{Global histogram equalization.}  A 256-level cumulative
+  distribution function mapping was applied to spread the global grayscale
+  histogram.  This is included as a strong global enhancement baseline.
+\end{enumerate}
+
+For a fair visual comparison, all grayscale images in
+\cref{fig:task1-comparison} are displayed with the same scale,
+$v_{\min}=0$ and $v_{\max}=255$.  No method is given a separate automatic display
+stretch.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{task1_comparison.png}
+  \caption{Original image and contrast enhancement results.  All grayscale
+  images use the same display range of 0--255.}
+  \label{fig:task1-comparison}
+\end{figure}
+
+\subsection{Evaluation Protocol}
+
+The result was evaluated both visually and quantitatively.  Visual evaluation
+checks whether the characters, especially \texttt{T12} and
+\texttt{HD44780A00}, become clearer without excessive background amplification.
+Quantitative evaluation uses three values:
+
+\begin{itemize}
+  \item \textbf{CNR}: contrast-to-noise ratio between fixed character-stroke
+  patches and fixed nearby background patches,
+  \begin{equation}
+    \mathrm{CNR} =
+    \frac{|\mu_c-\mu_b|}
+    {\sqrt{\sigma_c^2+\sigma_b^2}} .
+    \label{eq:task1-cnr}
+  \end{equation}
+  Larger CNR means better separation between character pixels and background
+  pixels in the selected regions.
+
+  \item \textbf{Otsu separability}: normalized between-class variance from
+  Otsu's thresholding criterion.  A larger value suggests that the grayscale
+  histogram is easier to split into two classes, but it does not guarantee that
+  the foreground class corresponds only to characters.
+
+  \item \textbf{Saturation ratio}: percentage of pixels clipped to the endpoints
+  0 or 255.  A large value indicates loss of grayscale detail.
+\end{itemize}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Task 1 quantitative comparison.}
+  \label{tab:task1-metrics}
+  \begin{tabular}{lccc}
+    \toprule
+    Method & CNR & Otsu separability & Saturation ratio \\
+    \midrule
+    Grayscale baseline & 0.6933 & 0.6941 & 0.00\% \\
+    2--98\% percentile stretch & \textbf{0.7013} & 0.7181 & 4.22\% \\
+    Gamma correction, $\gamma=1.5$ & 0.6948 & 0.7077 & 0.00\% \\
+    Global histogram equalization & 0.5669 & \textbf{0.7410} & 0.41\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{task1_histograms.png}
+  \caption{Histograms of the grayscale baseline and the three enhancement
+  methods.}
+  \label{fig:task1-histograms}
+\end{figure}
+
+\subsection{Result Analysis}
+
+The grayscale baseline preserves the original information, but the characters
+are only weakly separated from the textured background.  Its CNR is 0.6933 and
+its Otsu separability is 0.6941, which provides the reference level for the
+enhancement methods.
+
+The 2--98\% percentile stretch gives the most useful result for this task.  It
+raises CNR from 0.6933 to 0.7013 and raises Otsu separability from 0.6941 to
+0.7181.  In \cref{fig:task1-comparison}, the strokes in \texttt{T12} and
+\texttt{HD44780A00} become visibly brighter and easier to locate.  The trade-off
+is a 4.22\% saturation ratio, caused by clipping the lowest and highest tails of
+the intensity distribution.  This clipping is acceptable here because it mainly
+increases character visibility; it does not dominate the image with false
+foreground structures.
+
+Gamma correction with $\gamma=1.5$ is conservative.  It slightly improves CNR
+to 0.6948 and Otsu separability to 0.7077 without endpoint clipping.  However,
+the improvement is small because the transform darkens both background texture
+and weaker character strokes.  It does not separate the characters as clearly as
+percentile stretching.
+
+Global histogram equalization is not selected despite its highest Otsu
+separability of 0.7410.  The visual result shows that it strongly amplifies the
+ring-like background texture and bright speckles.  Its CNR also drops to 0.5669,
+which means the selected character and background patches become less separable
+than in the original grayscale image.  This is a clear example where a wider or
+more separable global histogram does not imply better character readability.
+For later binary conversion and segmentation, this result would likely create
+many false foreground regions.
+
+\subsection{Selected Output for Later Tasks}
+
+The selected Task 1 output is the 2--98\% percentile-stretched image saved in
+\texttt{task\_1/outputs/}.  It provides the best balance among the tested
+methods: character strokes become clearer, the measured CNR is the highest, and
+the background is not amplified as severely as in global histogram equalization.
+This output is therefore the preferred input candidate for the following
+smoothing, thresholding, outline detection, and segmentation stages.
+
+\FloatBarrier

@@ -1,0 +1,71 @@
+The two workflows show the image-processing dependencies and the separation
+between training, model selection, evaluation, and inference.
+\cref{fig:processing-workflow} follows the selected image-processing methods;
+the Task~5 contour branch and Task~6 segmentation branch share the same binary
+input.  \cref{fig:learning-workflow} shows that Figure~1 has no path into
+training or model selection.
+
+\begin{figure}[!htbp]
+  \centering
+  \begin{tikzpicture}[
+    node distance=6mm and 7mm,
+    block/.style={draw,rounded corners=2pt,fill=blue!5,align=center,
+      text width=43mm,minimum height=11mm,font=\small,inner sep=3pt},
+    output/.style={block,fill=green!7},
+    arrow/.style={-{Latex[length=2mm]},thick}]
+    \node[block] (input) {Figure~1: RGB chip image\\$990\times367$};
+    \node[block,right=of input] (enhance) {Task~1: grayscale conversion\\compare enhancement methods\\select 2--98\% stretching};
+    \node[block,right=of enhance] (smooth) {Task~2: implement box filter\\compare $3,5,7,11,15$\\select $5\times5$};
+    \node[block,below=of enhance] (crop) {Task~3: $5\times5$ smoothing\\projection-based row location\\crop $899\times148$};
+    \node[block,below=of crop] (binary) {Task~4: compare thresholds\\select local mean $41\times41$\\with offset $+25$};
+    \node[output,left=of binary] (contour) {Task~5: remove small regions\\trace outer and inner contours\\restore image coordinates};
+    \node[output,right=of binary] (segment) {Task~6: connected components\\keep area $\geq300$; order labels\\save ten individual crops};
+    \draw[arrow] (input) -- (enhance);
+    \draw[arrow] (enhance) -- (smooth);
+    \draw[arrow] (enhance) -- (crop);
+    \draw[arrow,dashed] (smooth.south) |- (crop.east);
+    \draw[arrow] (crop) -- (binary);
+    \draw[arrow] (binary) -- (contour);
+    \draw[arrow] (binary) -- (segment);
+  \end{tikzpicture}
+  \caption{Selected Tasks~1--6 workflow. The dashed arrow transfers the
+  selected filter setting; Task~3 applies that filter to Task~1's output.
+  Task~5 and Task~6 are separate branches of the Task~4 binary image.}
+  \label{fig:processing-workflow}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \begin{tikzpicture}[
+    node distance=5mm and 7mm,
+    block/.style={draw,rounded corners=2pt,fill=blue!5,align=center,
+      text width=48mm,minimum height=11mm,font=\small,inner sep=3pt},
+    held/.style={block,fill=orange!8},
+    result/.style={block,fill=green!7},
+    arrow/.style={-{Latex[length=2mm]},thick}]
+    \node[block] (train) {Stratified outer training pool\\75\%: 5,334 images};
+    \node[block,left=of train,text width=32mm] (data) {7,112 class images\\group exact duplicates\\by pixel hash};
+    \node[held,right=of train] (test) {Reserved outer test set\\25\%: 1,778 images};
+    \node[block,below=of train] (inner) {Inner split: train 4,802 / val 532\\fit train-only mean and std};
+    \node[block,below=of inner] (tune) {CNN and single regression MLP\\$32/48$ px $\times$ two learning rates\\select on validation only};
+    \node[block,below=of tune] (refit) {Refit on all 5,334 train images\\one CNN / three MLP members\\retain training normalisation};
+    \node[result,below=of refit] (eval) {Evaluate reserved test set\\accuracy, F1, confusion matrices\\compare training and inference time};
+    \node[held,right=of refit] (target) {Figure~1: ten Task~6 crops\\grayscale baseline / binary foreground\\geometry from inner training only};
+    \node[result,right=of eval] (infer) {Frozen models: target inference\\average MLP scores; apply argmax\\report baseline and alignment check};
+    \draw[arrow] (data) -- (train);
+    \draw[arrow] (data.north) -- ++(0,4mm) -| (test.north);
+    \draw[arrow] (train) -- (inner);
+    \draw[arrow] (inner) -- (tune);
+    \draw[arrow] (tune) -- (refit);
+    \draw[arrow] (refit) -- (eval);
+    \draw[arrow] (test.east) -- ++(5mm,0)
+      |- ([yshift=-5mm]eval.south) -- (eval.south);
+    \draw[arrow] (target) -- (infer);
+    \draw[arrow] (refit.east) -- (infer.north west);
+  \end{tikzpicture}
+  \caption{Task~7 experimental workflow. The outer test set and Figure~1
+  are excluded from optimisation and model selection. Target geometry
+  alignment uses only statistics of the inner training images.}
+  \label{fig:learning-workflow}
+\end{figure}
+\FloatBarrier

@@ -1,0 +1,309 @@
+\subsection{Objective and experimental design}
+
+Task~7 compares a convolutional classifier (Subtask~7-1) with the requested
+non-convolutional supervised regression system (Subtask~7-2).  The seven
+classes are \texttt{0}, \texttt{4}, \texttt{7}, \texttt{8}, \texttt{A},
+\texttt{D}, and \texttt{H}.  The implementation is in
+\path{task_7/task_7.py}; all numerical results, split manifests, checkpoints,
+confusion matrices, and tuning curves are saved in
+\path{task_7/outputs/}.  The supplied Figure~1 image and the ten crops made in
+Task~6 are used only after training for inference, so no target-row pixels can
+leak into the learned parameters.
+
+\subsection{Data split and leakage control}
+
+There are 1,016 grayscale $128\times128$ PNG images in each class, giving
+7,112 labelled samples.  The base random seed is 20261013; deterministic per-candidate and per-member
+seeds are derived from it as specified below.  The
+outer split is exactly 75\% training and 25\% test: 762 images per class are
+assigned to the outer training pool and 254 images per class to the untouched
+test set.  Ten percent of the outer training pool (76 images per class) is
+held out as validation for model selection, leaving 686 images per class for
+the tuning fit.  After selecting the input resolution and learning rate, the
+final models are refitted on all 5,334 images in the 75\% outer training pool.
+
+The file names contain repeated acquisition frames.  A random file-level
+split would therefore allow identical images to occur on both sides of the
+evaluation boundary.  The script hashes decoded grayscale pixels with
+SHA-256, keeps every exact duplicate group in one partition, and solves a
+small subset-sum problem per class to retain the requested 762/254 counts.
+The resulting train/validation/test counts are 4,802/532/1,778; the three
+pairwise exact-pixel digest intersections are all zero.  The complete audit is
+in \path{task_7/outputs/split_summary.json} and the reproducible assignment of
+every file is in \path{task_7/outputs/split_manifest.csv}.
+
+\subsection{Common preprocessing}
+
+Images are converted to one channel, resized with bilinear interpolation to a
+candidate square side ($32$ or $48$ pixels), and divided by 255.  The mean and
+standard deviation are fitted only on the tuning-train subset and the same
+statistics are applied to validation and test samples:
+\begin{equation}
+  z = \frac{x-\mu_{\mathrm{train}}}{\sigma_{\mathrm{train}}}.
+  \label{eq:task7-normalisation}
+\end{equation}
+No augmentation is used because the seven glyphs are already centred and
+small geometric changes can alter the distinguishing strokes.  The selected
+normalisation statistics are recorded in \path{task7_metrics.json}.
+
+\subsection{Subtask 7-1: CNN classifier}
+
+The CNN uses two $3\times3$ convolution--BatchNorm--ReLU layers with 32
+channels, max pooling, two corresponding layers with 64 channels, and one
+128-channel convolution followed by global average pooling.  A linear layer
+maps the pooled feature to seven logits.  Cross-entropy is used for the
+classification loss.  Global average pooling makes the classifier insensitive
+to small translations while keeping the number of parameters at 140,071.
+The forward path is
+\[
+  1\times s\times s\;\rightarrow\;32\;\rightarrow\;64\;\rightarrow\;128
+  \rightarrow\mathrm{GAP}\rightarrow7,
+\]
+where $s$ is the selected input side.  BatchNorm layers are included after
+each convolution~\cite{batchnorm}, and AdamW with weight decay $10^{-4}$
+is used for fitting~\cite{adamw}.
+
+\subsection{Subtask 7-2: MLP one-hot regression}
+
+The non-CNN method is a fully connected multi-output regression model.  For a
+class $c$, the target is the one-hot vector $y\in\{0,1\}^{7}$ and the network
+outputs seven real-valued scores $f_\theta(x)$.  It is trained with mean
+square error,
+\begin{equation}
+  \mathcal{L}_{\mathrm{reg}}(\theta)=
+  \frac{1}{7}\left\|f_\theta(x)-y\right\|_2^2,
+  \qquad \widehat c=\arg\max_j f_{\theta,j}(x).
+  \label{eq:task7-regression}
+\end{equation}
+This explicitly implements the requested supervised regression formulation;
+the MLP does not use convolution or a cross-entropy classification head.  Its
+structure is
+\[
+  s^2\;\rightarrow\;512\;\rightarrow\;256\;\rightarrow\;7,
+\]
+with GELU activations, BatchNorm1d and Dropout(0.25) after both hidden linear
+layers~\cite{batchnorm,dropout}.  The selected model has 659,463 parameters.  Three independently
+seeded MLPs are fitted and their seven-dimensional regression outputs are
+averaged before the argmax decision.  This ensemble reduces variance without
+changing the non-CNN nature of the method.
+
+\subsection{Hyperparameter and preprocessing investigation}
+
+The validation grid contains both $32\times32$ and $48\times48$ resizing and
+learning rates $10^{-3}$ and $3\times10^{-4}$.  All eight runs are listed in
+\cref{tab:task7-tuning}, and their validation curves are shown in
+\cref{fig:task7-tuning}.  Every tuning run uses a single network; the three-member
+MLP ensemble is fitted only after its configuration is selected.  The complete
+machine-readable grid is in \path{task_7/outputs/tuning_results.csv}.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Complete single-network validation grid. Bold configurations are
+  selected for final fitting. CNN loss is cross-entropy; MLP loss is one-hot
+  MSE, so the two loss scales should not be compared directly.}
+  \label{tab:task7-tuning}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{llrrrr}
+    \toprule
+    Method & Input & Initial LR & Best epoch & Val. accuracy & Val. loss \\
+    \midrule
+    CNN & $32\times32$ & $10^{-3}$ & 18 & 0.9962 & 0.0157 \\
+    CNN & $32\times32$ & $3\times10^{-4}$ & 7 & 0.9887 & 0.1413 \\
+    \textbf{CNN} & $\mathbf{48\times48}$ & $\mathbf{10^{-3}}$ & \textbf{15} & \textbf{0.9981} & \textbf{0.0416} \\
+    CNN & $48\times48$ & $3\times10^{-4}$ & 18 & 0.9868 & 0.0962 \\
+    \midrule
+    MLP regression & $32\times32$ & $10^{-3}$ & 18 & 1.0000 & 0.0055 \\
+    \textbf{MLP regression} & $\mathbf{32\times32}$ & $\mathbf{3\times10^{-4}}$ & \textbf{17} & \textbf{1.0000} & \textbf{0.0079} \\
+    MLP regression & $48\times48$ & $10^{-3}$ & 17 & 1.0000 & 0.0046 \\
+    MLP regression & $48\times48$ & $3\times10^{-4}$ & 16 & 0.9981 & 0.0074 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Configuration selection maximises validation accuracy.  An exact tie is
+resolved first by the smaller input side and then by the smaller learning
+rate.  Thus the MLP's three 100\% validation runs are tied; selecting
+$32\times32$ and $3\times10^{-4}$ follows this deterministic rule, rather than
+showing that this resolution is more accurate.  Within a run, the best epoch
+maximises accuracy and uses the lower validation loss to break an accuracy tie.
+
+For the CNN, increasing the side from 32 to 48 raises validation accuracy from
+99.62\% to 99.81\% at initial learning rate $10^{-3}$, but lowers it from
+98.87\% to 98.68\% at $3\times10^{-4}$.  The observed resolution effect
+therefore depends on the learning rate.  Initial rate $10^{-3}$ outperforms
+$3\times10^{-4}$ for both CNN resolutions within this budget; MLP differences
+are small and three settings reach the validation ceiling.  These are
+exploratory grid results, not isolated causal estimates: each configuration
+is run once, and its seed also changes according to
+\texttt{base + 100*side + int(100000*lr) + model\_offset}, with offsets 0 for
+CNN and 1 for MLP.  Random initialisation and batch order can contribute to
+the small differences; repeated runs with shared seed sets would be needed
+to quantify sensitivity more reliably.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Shared training settings and the final-fit schedule.}
+  \label{tab:task7-configuration}
+  \begin{tabularx}{\linewidth}{@{}lX@{}}
+    \toprule
+    Setting & Value \\
+    \midrule
+    Optimiser & AdamW; $\beta_1=0.9$, $\beta_2=0.999$, $\epsilon=10^{-8}$; weight decay $10^{-4}$ \\
+    Batch sizes & 128 for fitting, 256 for validation/test; no dropped final batch \\
+    Tuning budget & At most 18 epochs; early-stop patience 5 without a better accuracy/loss checkpoint \\
+    Tuning LR schedule & ReduceLROnPlateau on validation accuracy; factor 0.5, patience 2, minimum initial LR/20 \\
+    Final fitting & All 5,334 outer-training samples; 15 CNN epochs or 17 epochs per MLP member; cosine LR decay with $T_{\max}$ equal to that epoch count \\
+    Final seeds & CNN 20268013; MLP members 20268014, 20268051, 20268088 \\
+    Normalisation & At 32 px: $\mu=0.8240095$, $\sigma=0.3436231$; at 48 px: $\mu=0.8239762$, $\sigma=0.3558236$; fitted only on tuning-train \\
+    Loader/reproducibility & 0 workers; deterministic cuDNN; CUDA selected if available \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{tuning_curves.png}
+  \caption{Validation accuracy and loss for the resolution and learning-rate
+  investigation.}
+  \label{fig:task7-tuning}
+\end{figure}
+
+\subsection{Held-out results and efficiency}
+
+The untouched 1,778-image test set gives the results in
+\cref{tab:task7-results}.  Both methods generalise well, but the CNN is
+0.62 percentage points more accurate and has a slightly higher macro-F1.  The
+MLP ensemble has a larger parameter count because every pixel connects to the
+first dense layer; nevertheless, its lower-resolution input makes batched
+inference faster in this small experiment.  Training time includes the final
+fit (one CNN or three MLP members) on the complete outer training pool.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Final held-out test performance and measured efficiency.
+  Parameter counts are per member; training time covers the complete ensemble.}
+  \label{tab:task7-results}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}Xrrrrrr@{}}
+    \toprule
+    Method & Accuracy & Macro-F1 & Params & Members & \shortstack{Train\\(s)} & \shortstack{Infer.\\(ms/img)} \\
+    \midrule
+    CNN ($48\times48$) & 0.9933 & 0.9932 & 140,071 & 1 & 4.73 & 0.0375 \\
+    MLP reg. ensemble ($32\times32$) & 0.9871 & 0.9871 & 659,463 & 3 & 7.19 & 0.0142 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The MLP test regression MSE is 0.0084 before the argmax decision.  Its
+confusion matrix, like the CNN matrix, is nearly diagonal; the largest residual
+confusions involve the visually similar \texttt{A}/\texttt{D}/\texttt{H}
+strokes.  The matrices are provided as report-ready figures in
+\cref{fig:task7-confusion}.
+
+\begin{figure}[!htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{cnn_confusion_matrix.png}
+    \caption{CNN}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{mlp_confusion_matrix.png}
+    \caption{MLP regression ensemble}
+  \end{subfigure}
+  \caption{Confusion matrices on the duplicate-isolated held-out test set.}
+  \label{fig:task7-confusion}
+\end{figure}
+
+\subsection{Inference on the Figure-1 character row}
+
+After the held-out evaluation, the saved checkpoints were applied to the ten
+Task~6 character crops.  None of these crops enters the split manifest,
+normalisation fitting, network optimisation, or hyperparameter selection.
+The original grayscale baseline inverts the bright-on-dark photograph,
+square-pads each crop, resizes it, and applies the training normalisation.
+It gives only 10\% CNN character accuracy and 90\% MLP character accuracy
+on the known ten-character reference row (\cref{tab:task7-target}).  This
+large CNN gap from the clean-dataset test score motivates a separate
+preprocessing diagnosis.
+
+A single class-agnostic alignment rule was fixed before inspecting its new
+predictions: use the Task~6 binary crop, keep its largest 8-connected
+foreground component, crop the component's tight bounding box, invert to
+black strokes on white, and resize this box to the median relative
+foreground width and height measured on the 4,802 tuning-train images.
+Those medians are 0.609375 and 0.7578125; source foreground is defined by
+pixel value below 128.  The resized glyph is centred on a white square canvas
+and then receives the original trained model's normalisation.  This rule
+removes photograph texture and aligns glyph scale; it can also distort aspect
+ratio, since width and height are matched separately.  No target labels,
+model scores, or held-out test measurements select this rule or its parameters.
+The grayscale baseline and fixed binary alignment are shown in
+\cref{fig:task7-target-preprocessing}.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Figure~1 predictions, with ten ordered positions made explicit.
+  Accuracy is measured on this single reference row after inference.}
+  \label{tab:task7-target}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X*{10}{c}r@{}}
+    \toprule
+    Position & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & Accuracy \\
+    \midrule
+    Reference & H & D & 4 & 4 & 7 & 8 & 0 & A & 0 & 0 & --- \\
+    CNN, gray & A & A & A & A & A & A & A & A & A & A & 1/10 (10\%) \\
+    MLP ensemble, gray & H & D & 4 & 4 & 7 & H & 0 & A & 0 & 0 & 9/10 (90\%) \\
+    CNN, aligned binary & A & D & 4 & 4 & 7 & 8 & 0 & A & 8 & 0 & 8/10 (80\%) \\
+    MLP ensemble, aligned binary & H & D & 4 & 4 & 7 & 8 & 0 & A & 0 & 0 & 10/10 (100\%) \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\linewidth]{target_preprocessing.png}
+  \caption{The original inverted grayscale inputs (top) retain background
+  texture. Fixed binary foreground and training-median geometry alignment
+  (bottom) produce cleaner, centred inputs without fitting on Figure~1.}
+  \label{fig:task7-target-preprocessing}
+\end{figure}
+
+The unchanged checkpoints predict \texttt{AD44780A80} with the aligned CNN
+and \texttt{HD44780A00} with the aligned MLP ensemble.  The CNN still confuses
+the first \texttt{H} with \texttt{A} and the ninth \texttt{0} with \texttt{8}.
+These are exploratory results on one ten-character row, not a new held-out
+benchmark or evidence of general target-domain accuracy.  The controlled
+clean-dataset test results and measured training times above are unchanged.
+The results support improving foreground preparation before adding ensemble
+members; additional evidence would require separately acquired target-domain
+samples.  Any subsequent domain-aware retraining should use extra labelled
+training images or augmentations of the allowed training partition, while
+keeping Figure~1 and the held-out test partition out of fitting and selection.
+The saved \path{target_predictions.json} records both preprocessing paths,
+per-character scores, geometry-fit provenance, and checkpoint files.
+
+\subsection{Reproduction and environment}
+
+The code uses Python and PyTorch; no scikit-learn or pretrained model is used.
+The verified runtime contains Python 3.8, PyTorch 2.0.0+cu118,
+torchvision 0.15.1+cu118, NumPy 1.24.2, Pillow 9.4.0, and Matplotlib 3.7.1,
+running on an NVIDIA GeForce RTX 4080 SUPER.  The complete installation,
+Tasks~1--6 dependencies, full and smoke experiment commands, and saved-model
+\texttt{--inference-only} instructions are provided in
+\cref{sec:reproduction-guide}.  Separate output directories preserve the
+reported experiment during reproduction.  The supplied
+\path{task_7/environment.yml} pins the required Python dependencies, while
+\path{task_7/outputs/task7_metrics.json} records the selected settings,
+held-out results, and both target preprocessing paths.
+
+The implementation uses PyTorch modules for tensor operations and automatic
+differentiation~\cite{pytorch}, Pillow for image decoding/resizing~\cite{pillow},
+NumPy for split auditing and metrics~\cite{numpy}, and Matplotlib for
+figures~\cite{matplotlib}.  These external libraries are
+acknowledged here as required by the project brief; the data split, model
+definitions, regression target, metric calculation, and experiment orchestration
+are implemented in the submitted script.
+
+\FloatBarrier

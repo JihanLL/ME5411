@@ -1,0 +1,4 @@
+method,foreground_ratio_percent,n_components,n_character_components,largest_noise_area,threshold_or_params
+"Global Otsu, T=125",33.99573099239395,296.0,7.0,131.0,125.0
+Otsu after 5x5 smoothing + 3x3 opening,34.309893876078526,32.0,7.0,135.0,123.0
+"Adaptive mean 41x41, +25 (chosen)",30.71731353155157,126.0,10.0,224.0,local

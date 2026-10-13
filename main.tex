@@ -1,0 +1,334 @@
+% Compile with XeLaTeX:
+%   latexmk -xelatex main.tex
+% The project .latexmkrc automatically removes intermediate files afterwards
+% (for example, main.aux, main.lof, and main.log), while keeping main.pdf.
+\documentclass[11pt,a4paper]{article}
+
+% -----------------------------------------------------------------------------
+% Project information: update these fields before submission.
+% -----------------------------------------------------------------------------
+\newcommand{\CourseCode}{ME5411}
+\newcommand{\CourseTitle}{Robot Vision and AI}
+\newcommand{\ProjectTitle}{Group Project Report}
+\newcommand{\AcademicYear}{Academic Year 2026/2027}
+\newcommand{\GroupNumber}{17}
+\newcommand{\SubmissionDate}{20 November 2026}
+
+% Add or remove rows as needed. Keep the final \\ on every member row.
+\newcommand{\GroupMembers}{%
+  LI JIHAN & A0350821M \\
+  HU ZHENG & Student Number 2 \\
+  XU DARUI & Student Number 3 \\
+  ZHAN CHENG  & Student Number 3 \\
+}
+
+% -----------------------------------------------------------------------------
+% Font, page, and paragraph formatting required by the project brief.
+% -----------------------------------------------------------------------------
+\usepackage{fontspec}
+% Install the actual Arial family with scripts/install_report_fonts.sh.
+\setmainfont{Arial}
+\setsansfont{Arial}
+
+\usepackage[a4paper,margin=25mm,headheight=15pt]{geometry}
+\usepackage{setspace}
+\singlespacing
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0.35em}
+% Keep natural paragraph spacing on pages containing differently sized figures.
+\raggedbottom
+\setlength{\emergencystretch}{2em}
+
+% -----------------------------------------------------------------------------
+% Mathematics, tables, figures, and algorithms.
+% -----------------------------------------------------------------------------
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\usepackage{cite}
+\usepackage{enumitem}
+\usepackage{xurl}
+\usepackage{tocloft}
+% The contents list needs only the task and subsection levels.
+\setcounter{tocdepth}{2}
+\setlength{\cftbeforesecskip}{2pt}
+\setlength{\cftbeforesubsecskip}{0pt}
+
+% Allow figures and text to share pages while keeping floats within each task.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.75}
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+
+\graphicspath{{figures/}{task_1/outputs/}{task_2/outputs/}{task_3/outputs/}%
+  {task_4/outputs/}{task_5/outputs/}{task_6/outputs/}{task_7/outputs/}}
+
+\captionsetup{
+  font=normalfont,
+  labelfont=bf,
+  justification=centering,
+  singlelinecheck=true
+}
+\setlist{nosep}
+
+% Keep figures and tables numbered by report section.
+\numberwithin{figure}{section}
+\numberwithin{table}{section}
+\numberwithin{equation}{section}
+
+% -----------------------------------------------------------------------------
+% Headings, links, and page style.
+% -----------------------------------------------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\bfseries\Large}{\thesection}{0.75em}{}
+\titleformat{\subsection}
+  {\normalfont\bfseries\large}{\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}
+  {\normalfont\bfseries\normalsize}{\thesubsubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{2.0ex plus 0.5ex minus 0.2ex}{1.0ex}
+\titlespacing*{\subsection}{0pt}{1.5ex plus 0.4ex minus 0.2ex}{0.8ex}
+\titlespacing*{\subsubsection}{0pt}{1.2ex plus 0.3ex minus 0.2ex}{0.6ex}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\CourseCode\ \CourseTitle}
+\fancyhead[R]{Group \GroupNumber}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={\CourseCode\ \ProjectTitle},
+  pdfauthor={Group \GroupNumber},
+  pdfsubject={\CourseTitle},
+  bookmarksnumbered=true,
+  bookmarksopen=true
+}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+% Task-boundary FloatBarriers preserve figure ownership without forcing a page.
+\newcommand{\includetask}[3]{%
+  \IfFileExists{#3}{%
+    \FloatBarrier
+    \section{Task #1: #2}
+    \label{sec:task-#1}
+    \input{#3}%
+  }{}%
+}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+
+% -----------------------------------------------------------------------------
+% Title page
+% -----------------------------------------------------------------------------
+\begin{titlepage}
+  \thispagestyle{empty}
+  \centering
+
+  \vspace*{18mm}
+  {\Large National University of Singapore\par}
+  \vspace{5mm}
+  {\Large Department of Mechanical Engineering\par}
+
+  \vfill
+  {\LARGE\bfseries \CourseCode\ \CourseTitle\par}
+  \vspace{8mm}
+  {\Huge\bfseries \ProjectTitle\par}
+  \vspace{6mm}
+  {\Large \AcademicYear\par}
+
+  \vfill
+  {\Large\bfseries Group \GroupNumber\par}
+  \vspace{8mm}
+
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{>{\raggedright\arraybackslash}p{65mm}
+                  >{\raggedright\arraybackslash}p{52mm}}
+    \toprule
+    \textbf{Name} & \textbf{Student Number} \\
+    \midrule
+    \GroupMembers
+    \bottomrule
+  \end{tabular}
+
+  \vfill
+  {\large Submission date: \SubmissionDate\par}
+\end{titlepage}
+
+% -----------------------------------------------------------------------------
+% Front matter
+% -----------------------------------------------------------------------------
+\hypersetup{pageanchor=true}
+\pagenumbering{roman}
+\setcounter{page}{1}
+\tableofcontents
+\clearpage
+\listoffigures
+\listoftables
+
+% -----------------------------------------------------------------------------
+% Main report
+% -----------------------------------------------------------------------------
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\section{Introduction}
+\label{sec:introduction}
+Recognising characters printed on microchips supports component identification
+and visual inspection, but reliable recognition depends on both the image
+processing pipeline and the classifier.  The supplied $990\times367$ chip
+photograph contains the target row \texttt{HD44780A00}, with bright strokes on
+a dark, non-uniform surface.  Ring-like texture and speckle noise overlap the
+character intensity range, while weak strokes and narrow gaps make global
+thresholding and character separation difficult.  This project investigates
+how to preserve the character structure through enhancement, smoothing,
+segmentation, and supervised recognition, and how decisions at each stage
+affect the final result.
+
+Tasks~1--6 develop the image-processing pipeline and compare alternative
+methods using intermediate images and quantitative measurements.  Percentile
+stretching, gamma correction, and histogram equalisation are evaluated before
+averaging filters of several sizes are tested.  The selected 2--98\%
+percentile stretch and $5\times5$ smoothing support projection-based
+extraction of the character row.  Global Otsu and local adaptive thresholding
+are then compared: the adaptive method preserves ten separate character
+regions, whereas global thresholding merges neighbouring glyphs.
+Moore-neighbour contour following extracts the character outlines, and
+two-pass connected-component labelling with area filtering produces ten
+labelled crops in reading order.  These experiments connect the quality of
+the earlier preprocessing stages to the later segmentation outcome.
+
+Task~7 compares a convolutional neural network (CNN) with a fully connected
+multilayer perceptron (MLP) trained as a supervised regression model.  The MLP
+regresses seven-dimensional one-hot targets with mean-square error, and three
+independently trained members are combined by averaging their output scores.
+The 7,112 labelled images in \texttt{dataset\_2026}, covering the classes
+\texttt{0}, \texttt{4}, \texttt{7}, \texttt{8}, \texttt{A}, \texttt{D}, and
+\texttt{H}, are divided into 75\% training and 25\% test sets.  Exact duplicate
+images remain within one partition, and model selection uses validation data
+drawn only from the training pool.  Both networks use input standardisation
+and batch normalisation; input resolution and learning rate are investigated.
+Accuracy, macro-F1, confusion matrices, parameter counts, and measured
+training and inference times provide the effectiveness and efficiency
+comparison.  The chip photograph and its segmented characters are reserved
+for inference after training.
+
+The selected CNN and MLP ensemble achieve held-out test accuracies of 99.33\%
+and 98.71\%, respectively.  Direct grayscale inference on the photographed row
+identifies one of ten characters with the CNN and nine with the MLP.  A further
+class-independent preprocessing experiment uses the segmented binary
+foreground and centres it at the median foreground dimensions estimated only
+from the tuning-training images.  With the same trained models, this improves
+the target-row results to eight of ten and ten of ten characters, respectively.
+This ten-character check illustrates sensitivity to image appearance; it is
+separate from the larger held-out test and does not establish general target-domain
+accuracy.  Tasks~1--6 describe the
+processing stages, \cref{sec:task-7} presents the learning experiments, and
+\cref{sec:reproduction-guide} explains the implementation and reproduction
+procedure.
+
+\subsection{Processing and experimental workflows}
+\input{docs/workflows.tex}
+
+\includetask{1}{Original Image and Contrast Enhancement}{task_1/task_1.tex}
+\includetask{2}{Image Smoothing with Averaging Filters}{task_2/task_2.tex}
+\includetask{3}{Sub-image Extraction}{task_3/task_3.tex}
+\includetask{4}{Binary Image Conversion}{task_4/task_4.tex}
+\includetask{5}{Character Outline Detection}{task_5/task_5.tex}
+\includetask{6}{Character Segmentation and Labelling}{task_6/task_6.tex}
+\includetask{7}{Character Classification}{task_7/task_7.tex}
+
+\section{Implementation and Reproduction Guide}
+\label{sec:reproduction-guide}
+\input{docs/reproduction.tex}
+
+\section{Discussion and Conclusion}
+\label{sec:discussion}
+Tasks~1--6 taught us how image-processing functions relate to measurable image
+properties.  Grayscale conversion and contrast transforms change intensity
+distributions; averaging reduces local variation but also weakens edge
+gradients.  Row and column projections describe text location, while
+thresholding determines foreground connectivity.  Contour following exposes
+boundaries and holes, and connected-component labelling uses adjacency, area,
+and bounding boxes to separate characters.  These relationships explain why
+each stage must preserve the information needed by the next stage, rather
+than merely produce a visually smoother or brighter image.
+
+The comparisons support the selected pipeline.  In Task~1, percentile
+stretching gave better character-to-background separation than histogram
+equalisation, which amplified texture; gamma correction produced a smaller
+improvement.  Task~2 showed the noise--detail trade-off: larger averaging
+kernels suppressed more noise but blurred strokes, so $5\times5$ was a
+practical compromise.  In Task~3, band-adaptive refinement reduced the effect
+of texture on coarse projection-based localisation, and a safety margin
+preserved the complete row.  In Task~4, smoothing and opening reduced Otsu
+noise but left only seven merged character groups; local adaptive thresholding
+retained ten.  Tasks~5 and~6 showed that correct component counts do not
+guarantee intact glyph topology: the open lower loop of \texttt{8} and tiny
+holes in \texttt{0} remained visible in the contours.  Area filtering removed
+the much smaller noise regions, enabling ten separately labelled crops.
+
+Our investigations also covered the mathematical definitions of the methods:
+grayscale weighting, percentile and gamma transforms, cumulative-histogram
+mapping, neighbourhood averaging, projection sums, threshold criteria,
+morphological operations, contour traversal, and component equivalence.
+The preceding task sections document these formulations and implementation
+rules.  We examined how NumPy supports array operations and statistics,
+Pillow handles image decoding and resizing, Matplotlib presents results,
+and PyTorch supplies networks, losses, automatic differentiation, and
+optimisation~\cite{numpy,pillow,matplotlib,pytorch}.  The network investigation
+included standardisation, BatchNorm, Dropout, one-hot MSE regression,
+cross-entropy, and the actual hidden-layer activations:
+\[
+  \operatorname{ReLU}(z)=\max(0,z),\qquad
+  \operatorname{GELU}(z)=z\Phi(z)
+  =\frac{z}{2}\left[1+\operatorname{erf}\!\left(\frac{z}{\sqrt{2}}\right)\right].
+\]
+Here $\Phi$ is the standard normal cumulative distribution function.
+The CNN uses ReLU's hard zero cutoff; the MLP uses GELU's smooth
+weighting~\cite{gelu}.  Both have linear output layers, with argmax used for
+the final class decision.  These are investigated design choices; their
+individual benefits were not isolated through activation or regularisation
+ablation experiments.
+
+Task~7's CNN achieved slightly higher held-out accuracy than the MLP ensemble
+(99.33\% versus 98.71\%).  The ensemble took longer to train, while its
+lower-resolution input gave faster measured inference in this experiment.
+Resolution and learning-rate effects depended on the configuration, and
+single-run results limit the strength of sensitivity claims.  On Figure~1,
+training-derived foreground alignment improved CNN recognition from one to
+eight correct characters and MLP recognition from nine to ten, using unchanged
+models.  This illustrates the importance of matching foreground appearance
+and scale to the training data.  The project therefore achieved a complete
+processing and recognition pipeline, while also showing that high accuracy
+on clean data does not ensure reliable recognition of textured photographs;
+the ten-character target check requires broader validation before general
+claims can be made.
+
+\FloatBarrier
+\phantomsection
+\addcontentsline{toc}{section}{References}
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}

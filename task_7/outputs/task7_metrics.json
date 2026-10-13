@@ -1,0 +1,1494 @@
+{
+  "dataset": "/root/autodl-tmp/project/dataset_2026",
+  "classes": [
+    "0",
+    "4",
+    "7",
+    "8",
+    "A",
+    "D",
+    "H"
+  ],
+  "device": "cuda",
+  "seed": 20261013,
+  "split": {
+    "partitions": {
+      "train": {
+        "images": 4802,
+        "class_counts": {
+          "0": 686,
+          "4": 686,
+          "7": 686,
+          "8": 686,
+          "A": 686,
+          "D": 686,
+          "H": 686
+        },
+        "unique_exact_pixel_images": 3969
+      },
+      "validation": {
+        "images": 532,
+        "class_counts": {
+          "0": 76,
+          "4": 76,
+          "7": 76,
+          "8": 76,
+          "A": 76,
+          "D": 76,
+          "H": 76
+        },
+        "unique_exact_pixel_images": 448
+      },
+      "test": {
+        "images": 1778,
+        "class_counts": {
+          "0": 254,
+          "4": 254,
+          "7": 254,
+          "8": 254,
+          "A": 254,
+          "D": 254,
+          "H": 254
+        },
+        "unique_exact_pixel_images": 1433
+      }
+    },
+    "duplicate_digest_intersections": {
+      "train_validation": 0,
+      "train_test": 0,
+      "validation_test": 0
+    },
+    "source": "/root/autodl-tmp/project/dataset_2026",
+    "outer_training_fraction": 0.75,
+    "outer_test_fraction": 0.25,
+    "split_policy": "class-stratified grouped 75/25; exact decoded-pixel duplicates never cross partitions",
+    "seed": 20261013
+  },
+  "preprocessing": {
+    "source_mode": "grayscale 8-bit",
+    "resize": "bilinear to square; candidate sides [32, 48] px",
+    "normalization": "global training-partition pixel mean/std z-score; identical statistics applied to validation and test",
+    "augmentation": "none",
+    "duplicate_control": "identical decoded grayscale pixel arrays are kept in a single partition",
+    "target_foreground_geometry": {
+      "width_fraction": 0.609375,
+      "height_fraction": 0.7578125,
+      "fit_partition": "tuning_train",
+      "fit_images": 4802,
+      "foreground_threshold": 128,
+      "statistic": "class-agnostic median relative foreground bounding-box width/height"
+    }
+  },
+  "tuning_grid": {
+    "input_sizes": [
+      32,
+      48
+    ],
+    "learning_rates": [
+      0.001,
+      0.0003
+    ],
+    "weight_decay": 0.0001,
+    "batch_size": 128,
+    "max_epochs": 18,
+    "early_stopping_patience": 5,
+    "candidate_seed_rule": "seed + side*100 + int(lr*100000) + (1 for MLP, 0 for CNN)",
+    "selection": "maximize validation accuracy; ties: smaller input side, then smaller learning rate",
+    "scheduler": "ReduceLROnPlateau(mode=max, factor=0.5, patience=2, min_lr=initial_lr/20)",
+    "final_scheduler": "CosineAnnealingLR(T_max=selected_best_epoch)",
+    "optimizer": "AdamW(betas=(0.9,0.999), eps=1e-8); weight_decay recorded above"
+  },
+  "selected_validation_models": {
+    "cnn": {
+      "input_size": 48,
+      "learning_rate": 0.001,
+      "validation_accuracy": 0.9981203007518797,
+      "selected_epochs": 15,
+      "validation_members": 1,
+      "run_seed": 20265913
+    },
+    "mlp": {
+      "input_size": 32,
+      "learning_rate": 0.0003,
+      "validation_accuracy": 1.0,
+      "selected_epochs": 17,
+      "validation_members": 1,
+      "run_seed": 20264243
+    }
+  },
+  "architectures": {
+    "cnn": "Conv(1,32)-BN-ReLU x2-MaxPool; Conv(32,64)-BN-ReLU x2-MaxPool; Conv(64,128)-BN-ReLU; global average pool; linear 7 logits; cross-entropy",
+    "mlp": "Flatten-(Linear 512-BN-GELU-Dropout 0.25)-(Linear 256-BN-GELU-Dropout 0.25)-Linear 7 scores; one-hot target MSE regression; class is argmax(score)"
+  },
+  "test_results": {
+    "cnn": {
+      "accuracy": 0.9932508436445444,
+      "macro_precision": 0.9932614205765844,
+      "macro_recall": 0.9932508436445444,
+      "macro_f1": 0.9932440961856,
+      "per_class": {
+        "0": {
+          "precision": 1.0,
+          "recall": 0.9921259842519685,
+          "f1": 0.9960474308300395,
+          "support": 254
+        },
+        "4": {
+          "precision": 0.98828125,
+          "recall": 0.9960629921259843,
+          "f1": 0.9921568627450981,
+          "support": 254
+        },
+        "7": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 254
+        },
+        "8": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 254
+        },
+        "A": {
+          "precision": 0.9841269841269841,
+          "recall": 0.9763779527559056,
+          "f1": 0.9802371541501976,
+          "support": 254
+        },
+        "D": {
+          "precision": 0.9920948616600791,
+          "recall": 0.9881889763779528,
+          "f1": 0.990138067061144,
+          "support": 254
+        },
+        "H": {
+          "precision": 0.9883268482490273,
+          "recall": 1.0,
+          "f1": 0.9941291585127202,
+          "support": 254
+        }
+      },
+      "confusion_matrix": [
+        [
+          252,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          253,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          254,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          254,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          3,
+          0,
+          0,
+          248,
+          0,
+          3
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          3,
+          251,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          254
+        ]
+      ],
+      "model": "CNN",
+      "input_size": 48,
+      "selected_learning_rate": 0.001,
+      "selected_epochs": 15,
+      "ensemble_members": 1,
+      "training_seconds_sum": 4.731618217003415,
+      "test_inference_seconds": 0.0666204440058209,
+      "test_inference_ms_per_image": 0.03746931608876316,
+      "parameter_count_per_model": 140071,
+      "test_images": 1778,
+      "figure1_inference": {
+        "available": true,
+        "source": [
+          "task_6/outputs/chars/char_01_bin.png",
+          "task_6/outputs/chars/char_02_bin.png",
+          "task_6/outputs/chars/char_03_bin.png",
+          "task_6/outputs/chars/char_04_bin.png",
+          "task_6/outputs/chars/char_05_bin.png",
+          "task_6/outputs/chars/char_06_bin.png",
+          "task_6/outputs/chars/char_07_bin.png",
+          "task_6/outputs/chars/char_08_bin.png",
+          "task_6/outputs/chars/char_09_bin.png",
+          "task_6/outputs/chars/char_10_bin.png"
+        ],
+        "expected_string": "HD44780A00",
+        "predicted_string": "AD44780A80",
+        "predicted_labels": [
+          "A",
+          "D",
+          "4",
+          "4",
+          "7",
+          "8",
+          "0",
+          "A",
+          "8",
+          "0"
+        ],
+        "correct_characters": 8,
+        "reference_character_accuracy": 0.8,
+        "scores": [
+          [
+            -3.573572874069214,
+            -2.4225361347198486,
+            -4.309530258178711,
+            1.1417936086654663,
+            3.261049747467041,
+            -2.7163524627685547,
+            0.4178161323070526
+          ],
+          [
+            -2.18705153465271,
+            -5.091903209686279,
+            -3.3659770488739014,
+            0.2591158151626587,
+            0.675520658493042,
+            2.3396711349487305,
+            0.3919370174407959
+          ],
+          [
+            -3.2027621269226074,
+            2.403402328491211,
+            -2.588357925415039,
+            -0.16628900170326233,
+            0.06817089021205902,
+            -3.8434269428253174,
+            0.5209589004516602
+          ],
+          [
+            -3.382073163986206,
+            0.9542407989501953,
+            -2.1063716411590576,
+            -0.22583726048469543,
+            0.8659036159515381,
+            -3.3405215740203857,
+            -0.42955222725868225
+          ],
+          [
+            -4.28160285949707,
+            -0.6317023038864136,
+            2.8752853870391846,
+            -0.6234456300735474,
+            -2.1306216716766357,
+            -2.0993146896362305,
+            -0.2786601483821869
+          ],
+          [
+            -1.8041324615478516,
+            -1.579227328300476,
+            -1.463643193244934,
+            1.6404370069503784,
+            -1.0980989933013916,
+            -1.0309643745422363,
+            -0.4531096816062927
+          ],
+          [
+            1.1499338150024414,
+            -3.363288640975952,
+            -3.606710433959961,
+            0.040263522416353226,
+            0.55472332239151,
+            -1.5547373294830322,
+            0.06147625297307968
+          ],
+          [
+            -3.5307891368865967,
+            -1.684526801109314,
+            -3.883406400680542,
+            -1.491606593132019,
+            5.288817405700684,
+            -2.2772305011749268,
+            -0.35200607776641846
+          ],
+          [
+            0.23023293912410736,
+            -2.959489345550537,
+            -2.7029380798339844,
+            0.8806586265563965,
+            -0.10702835768461227,
+            -0.8308314085006714,
+            -0.6622500419616699
+          ],
+          [
+            0.6311513185501099,
+            -3.798645496368408,
+            -3.5283524990081787,
+            0.2796555161476135,
+            0.5125659108161926,
+            0.09798502922058105,
+            -0.7409911155700684
+          ]
+        ],
+        "input_size": 48,
+        "normalization": {
+          "mean": 0.8239761590957642,
+          "std": 0.3558235764503479
+        },
+        "preprocessing": "binary-largest-component / train-median bbox / black-on-white",
+        "foreground_geometry": {
+          "width_fraction": 0.609375,
+          "height_fraction": 0.7578125,
+          "fit_partition": "tuning_train",
+          "fit_images": 4802,
+          "foreground_threshold": 128,
+          "statistic": "class-agnostic median relative foreground bounding-box width/height"
+        },
+        "note": "Inference only; these crops were not used to fit any parameter.",
+        "baseline_gray_inference": {
+          "available": true,
+          "source": [
+            "task_6/outputs/chars/char_01_gray.png",
+            "task_6/outputs/chars/char_02_gray.png",
+            "task_6/outputs/chars/char_03_gray.png",
+            "task_6/outputs/chars/char_04_gray.png",
+            "task_6/outputs/chars/char_05_gray.png",
+            "task_6/outputs/chars/char_06_gray.png",
+            "task_6/outputs/chars/char_07_gray.png",
+            "task_6/outputs/chars/char_08_gray.png",
+            "task_6/outputs/chars/char_09_gray.png",
+            "task_6/outputs/chars/char_10_gray.png"
+          ],
+          "expected_string": "HD44780A00",
+          "predicted_string": "AAAAAAAAAA",
+          "predicted_labels": [
+            "A",
+            "A",
+            "A",
+            "A",
+            "A",
+            "A",
+            "A",
+            "A",
+            "A",
+            "A"
+          ],
+          "correct_characters": 1,
+          "reference_character_accuracy": 0.1,
+          "scores": [
+            [
+              -8.411913871765137,
+              -1.2460757493972778,
+              -12.50260066986084,
+              -4.724391937255859,
+              9.33987045288086,
+              0.1758173406124115,
+              3.4327590465545654
+            ],
+            [
+              -8.217575073242188,
+              -0.9885635375976562,
+              -11.527719497680664,
+              -3.978142023086548,
+              8.393911361694336,
+              0.5399851202964783,
+              2.9167330265045166
+            ],
+            [
+              -8.940815925598145,
+              -0.7975641489028931,
+              -12.904651641845703,
+              -4.610787868499756,
+              8.256939888000488,
+              0.33566343784332275,
+              5.084421634674072
+            ],
+            [
+              -10.595257759094238,
+              -0.38253575563430786,
+              -14.109675407409668,
+              -4.311578273773193,
+              9.870863914489746,
+              -0.5602306127548218,
+              4.8921380043029785
+            ],
+            [
+              -9.18186092376709,
+              0.5288216471672058,
+              -12.255322456359863,
+              -4.99491024017334,
+              8.78980827331543,
+              -0.728156328201294,
+              4.588699817657471
+            ],
+            [
+              -9.124838829040527,
+              -0.7663979530334473,
+              -11.275670051574707,
+              -3.446512460708618,
+              8.352867126464844,
+              0.2952537536621094,
+              2.392216920852661
+            ],
+            [
+              -8.065084457397461,
+              -2.228111743927002,
+              -12.525410652160645,
+              -4.7612080574035645,
+              9.561727523803711,
+              0.6552358865737915,
+              3.7893869876861572
+            ],
+            [
+              -8.798346519470215,
+              -2.5693812370300293,
+              -13.870415687561035,
+              -5.846848487854004,
+              9.560349464416504,
+              1.6097310781478882,
+              4.7531843185424805
+            ],
+            [
+              -7.96469259262085,
+              -2.7640013694763184,
+              -12.277981758117676,
+              -4.085605621337891,
+              9.620381355285645,
+              0.29271411895751953,
+              3.688000202178955
+            ],
+            [
+              -6.605722904205322,
+              -2.4762909412384033,
+              -10.914702415466309,
+              -3.7888107299804688,
+              8.349041938781738,
+              0.5789929628372192,
+              2.9488375186920166
+            ]
+          ],
+          "input_size": 48,
+          "normalization": {
+            "mean": 0.8239761590957642,
+            "std": 0.3558235764503479
+          },
+          "preprocessing": "gray-invert / square-pad / resize",
+          "foreground_geometry": null,
+          "note": "Inference only; these crops were not used to fit any parameter."
+        },
+        "checkpoint_files": [
+          "cnn_48px_seed20268013.pt"
+        ],
+        "checkpoint_sha256": {
+          "cnn_48px_seed20268013.pt": "320d9fec12757089e1bc7bfdd17ada4cf29650f03328cbdd7655614ef4303c8f"
+        },
+        "adaptation_policy": "Single predefined label-free rule: largest binary component, median tuning-train bbox width/height, centered white canvas. No target label, target score, or held-out test measurement selects this rule. Original gray baseline is retained. This is an exploratory target-domain check."
+      }
+    },
+    "mlp": {
+      "accuracy": 0.9870641169853769,
+      "macro_precision": 0.9870744122029143,
+      "macro_recall": 0.9870641169853769,
+      "macro_f1": 0.9870517109256186,
+      "per_class": {
+        "0": {
+          "precision": 0.9920948616600791,
+          "recall": 0.9881889763779528,
+          "f1": 0.990138067061144,
+          "support": 254
+        },
+        "4": {
+          "precision": 0.9844357976653697,
+          "recall": 0.9960629921259843,
+          "f1": 0.990215264187867,
+          "support": 254
+        },
+        "7": {
+          "precision": 0.9921875,
+          "recall": 1.0,
+          "f1": 0.996078431372549,
+          "support": 254
+        },
+        "8": {
+          "precision": 0.9921259842519685,
+          "recall": 0.9921259842519685,
+          "f1": 0.9921259842519685,
+          "support": 254
+        },
+        "A": {
+          "precision": 0.9803921568627451,
+          "recall": 0.984251968503937,
+          "f1": 0.9823182711198428,
+          "support": 254
+        },
+        "D": {
+          "precision": 0.9762845849802372,
+          "recall": 0.9724409448818898,
+          "f1": 0.9743589743589743,
+          "support": 254
+        },
+        "H": {
+          "precision": 0.992,
+          "recall": 0.9763779527559056,
+          "f1": 0.9841269841269842,
+          "support": 254
+        }
+      },
+      "confusion_matrix": [
+        [
+          251,
+          0,
+          0,
+          1,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          253,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          254,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          252,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          250,
+          1,
+          2
+        ],
+        [
+          2,
+          2,
+          0,
+          0,
+          3,
+          247,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          2,
+          2,
+          248
+        ]
+      ],
+      "test_mse": 0.008397179655730724,
+      "model": "MLP one-hot regression",
+      "input_size": 32,
+      "selected_learning_rate": 0.0003,
+      "selected_epochs": 17,
+      "ensemble_members": 3,
+      "training_seconds_sum": 7.194717568985652,
+      "test_inference_seconds": 0.025237608002498746,
+      "test_inference_ms_per_image": 0.01419438020388006,
+      "parameter_count_per_model": 659463,
+      "test_images": 1778,
+      "figure1_inference": {
+        "available": true,
+        "source": [
+          "task_6/outputs/chars/char_01_bin.png",
+          "task_6/outputs/chars/char_02_bin.png",
+          "task_6/outputs/chars/char_03_bin.png",
+          "task_6/outputs/chars/char_04_bin.png",
+          "task_6/outputs/chars/char_05_bin.png",
+          "task_6/outputs/chars/char_06_bin.png",
+          "task_6/outputs/chars/char_07_bin.png",
+          "task_6/outputs/chars/char_08_bin.png",
+          "task_6/outputs/chars/char_09_bin.png",
+          "task_6/outputs/chars/char_10_bin.png"
+        ],
+        "expected_string": "HD44780A00",
+        "predicted_string": "HD44780A00",
+        "predicted_labels": [
+          "H",
+          "D",
+          "4",
+          "4",
+          "7",
+          "8",
+          "0",
+          "A",
+          "0",
+          "0"
+        ],
+        "correct_characters": 10,
+        "reference_character_accuracy": 1.0,
+        "scores": [
+          [
+            0.028911802917718887,
+            -0.05669816955924034,
+            0.011026740074157715,
+            0.13075850903987885,
+            -0.007641695439815521,
+            -0.09293697774410248,
+            0.8482396602630615
+          ],
+          [
+            0.3396628499031067,
+            -0.031647831201553345,
+            -0.03869352117180824,
+            0.015695150941610336,
+            0.0032215206883847713,
+            0.42551177740097046,
+            0.05436054617166519
+          ],
+          [
+            0.08071702718734741,
+            0.7560844421386719,
+            -0.01503888051956892,
+            -0.0502932034432888,
+            0.10550692677497864,
+            -0.05180959403514862,
+            0.017463751137256622
+          ],
+          [
+            0.010028540156781673,
+            0.7945026159286499,
+            -0.014955481514334679,
+            0.032428935170173645,
+            0.08150823414325714,
+            -0.0006025502225384116,
+            -0.020647482946515083
+          ],
+          [
+            -0.062381770461797714,
+            0.19022226333618164,
+            0.8845433592796326,
+            0.01390819437801838,
+            -0.12329568713903427,
+            -0.05292470380663872,
+            0.0901646539568901
+          ],
+          [
+            -0.06202472746372223,
+            -0.08574815839529037,
+            0.030620550736784935,
+            0.6215667724609375,
+            -0.01481296680867672,
+            0.016676384955644608,
+            0.17408499121665955
+          ],
+          [
+            0.6370186805725098,
+            -0.00019055543816648424,
+            -0.002862693276256323,
+            -0.04270239919424057,
+            -0.024941865354776382,
+            0.17734180390834808,
+            0.02143828570842743
+          ],
+          [
+            -0.03101673722267151,
+            -0.011854193173348904,
+            0.03240925818681717,
+            0.02327200397849083,
+            0.8318963050842285,
+            0.022557366639375687,
+            0.006792447529733181
+          ],
+          [
+            0.8292352557182312,
+            0.003693893551826477,
+            0.004830300807952881,
+            -0.06846797466278076,
+            -0.030731070786714554,
+            0.029399871826171875,
+            0.015319621190428734
+          ],
+          [
+            0.7159218788146973,
+            -0.02647778019309044,
+            -0.006278428714722395,
+            -0.027810342609882355,
+            -0.003055413719266653,
+            0.1691696047782898,
+            0.019544776529073715
+          ]
+        ],
+        "input_size": 32,
+        "normalization": {
+          "mean": 0.8240094780921936,
+          "std": 0.3436231315135956
+        },
+        "preprocessing": "binary-largest-component / train-median bbox / black-on-white",
+        "foreground_geometry": {
+          "width_fraction": 0.609375,
+          "height_fraction": 0.7578125,
+          "fit_partition": "tuning_train",
+          "fit_images": 4802,
+          "foreground_threshold": 128,
+          "statistic": "class-agnostic median relative foreground bounding-box width/height"
+        },
+        "note": "Inference only; these crops were not used to fit any parameter.",
+        "baseline_gray_inference": {
+          "available": true,
+          "source": [
+            "task_6/outputs/chars/char_01_gray.png",
+            "task_6/outputs/chars/char_02_gray.png",
+            "task_6/outputs/chars/char_03_gray.png",
+            "task_6/outputs/chars/char_04_gray.png",
+            "task_6/outputs/chars/char_05_gray.png",
+            "task_6/outputs/chars/char_06_gray.png",
+            "task_6/outputs/chars/char_07_gray.png",
+            "task_6/outputs/chars/char_08_gray.png",
+            "task_6/outputs/chars/char_09_gray.png",
+            "task_6/outputs/chars/char_10_gray.png"
+          ],
+          "expected_string": "HD44780A00",
+          "predicted_string": "HD447H0A00",
+          "predicted_labels": [
+            "H",
+            "D",
+            "4",
+            "4",
+            "7",
+            "H",
+            "0",
+            "A",
+            "0",
+            "0"
+          ],
+          "correct_characters": 9,
+          "reference_character_accuracy": 0.9,
+          "scores": [
+            [
+              0.048502326011657715,
+              -0.04137125238776207,
+              -0.007596913725137711,
+              0.02738332375884056,
+              0.00488644652068615,
+              -0.0690004974603653,
+              0.6516282558441162
+            ],
+            [
+              0.1847848743200302,
+              -0.006975160446017981,
+              -0.019246719777584076,
+              0.03552260249853134,
+              -0.03054516762495041,
+              0.3149525821208954,
+              0.10407837480306625
+            ],
+            [
+              0.059657808393239975,
+              0.48783764243125916,
+              0.05136127397418022,
+              -0.02083754539489746,
+              -0.006873731967061758,
+              -0.054265912622213364,
+              0.07733610272407532
+            ],
+            [
+              0.08867517113685608,
+              0.34120893478393555,
+              0.052735261619091034,
+              -0.019777920097112656,
+              0.043622590601444244,
+              -0.005313163157552481,
+              0.091318279504776
+            ],
+            [
+              -0.04627113789319992,
+              0.012246246449649334,
+              0.4627079963684082,
+              -0.05821765214204788,
+              0.01437312364578247,
+              0.05954858288168907,
+              0.05113409087061882
+            ],
+            [
+              0.06605689227581024,
+              -0.020747069269418716,
+              0.025450721383094788,
+              0.20527158677577972,
+              -0.04546716436743736,
+              0.07080750167369843,
+              0.2862966060638428
+            ],
+            [
+              0.40434786677360535,
+              0.002483571646735072,
+              -0.016554920002818108,
+              0.004381354432553053,
+              -0.047839969396591187,
+              0.05442234128713608,
+              0.0612497441470623
+            ],
+            [
+              -0.04980693757534027,
+              -0.06932568550109863,
+              0.037307605147361755,
+              -0.010778437368571758,
+              0.4019131362438202,
+              0.05633112043142319,
+              0.16238948702812195
+            ],
+            [
+              0.35574114322662354,
+              0.0028538282494992018,
+              -0.029134836047887802,
+              -0.052447132766246796,
+              0.0035837660543620586,
+              0.23416003584861755,
+              0.07631289213895798
+            ],
+            [
+              0.6288438439369202,
+              -0.00854795053601265,
+              -0.021674688905477524,
+              -0.0020270920358598232,
+              -0.0292305126786232,
+              0.08136755228042603,
+              0.12160125374794006
+            ]
+          ],
+          "input_size": 32,
+          "normalization": {
+            "mean": 0.8240094780921936,
+            "std": 0.3436231315135956
+          },
+          "preprocessing": "gray-invert / square-pad / resize",
+          "foreground_geometry": null,
+          "note": "Inference only; these crops were not used to fit any parameter."
+        },
+        "checkpoint_files": [
+          "mlp_32px_seed20268014.pt",
+          "mlp_32px_seed20268051.pt",
+          "mlp_32px_seed20268088.pt"
+        ],
+        "checkpoint_sha256": {
+          "mlp_32px_seed20268014.pt": "104a89d2cff32628cbeb6d7360eb37b98e414b3a99df94ae19de6995f83a2674",
+          "mlp_32px_seed20268051.pt": "25e6e9c0d662cc63a1c8d712d7a1f53135d42bbc251fd6976bb8ba4f0fb676fb",
+          "mlp_32px_seed20268088.pt": "102577a7f8d1ee85cac62ae2186cb0dd4f8c135c02d3233137eedc3487864cde"
+        },
+        "adaptation_policy": "Single predefined label-free rule: largest binary component, median tuning-train bbox width/height, centered white canvas. No target label, target score, or held-out test measurement selects this rule. Original gray baseline is retained. This is an exploratory target-domain check."
+      }
+    }
+  },
+  "target_predictions": {
+    "cnn": {
+      "available": true,
+      "source": [
+        "task_6/outputs/chars/char_01_bin.png",
+        "task_6/outputs/chars/char_02_bin.png",
+        "task_6/outputs/chars/char_03_bin.png",
+        "task_6/outputs/chars/char_04_bin.png",
+        "task_6/outputs/chars/char_05_bin.png",
+        "task_6/outputs/chars/char_06_bin.png",
+        "task_6/outputs/chars/char_07_bin.png",
+        "task_6/outputs/chars/char_08_bin.png",
+        "task_6/outputs/chars/char_09_bin.png",
+        "task_6/outputs/chars/char_10_bin.png"
+      ],
+      "expected_string": "HD44780A00",
+      "predicted_string": "AD44780A80",
+      "predicted_labels": [
+        "A",
+        "D",
+        "4",
+        "4",
+        "7",
+        "8",
+        "0",
+        "A",
+        "8",
+        "0"
+      ],
+      "correct_characters": 8,
+      "reference_character_accuracy": 0.8,
+      "scores": [
+        [
+          -3.573572874069214,
+          -2.4225361347198486,
+          -4.309530258178711,
+          1.1417936086654663,
+          3.261049747467041,
+          -2.7163524627685547,
+          0.4178161323070526
+        ],
+        [
+          -2.18705153465271,
+          -5.091903209686279,
+          -3.3659770488739014,
+          0.2591158151626587,
+          0.675520658493042,
+          2.3396711349487305,
+          0.3919370174407959
+        ],
+        [
+          -3.2027621269226074,
+          2.403402328491211,
+          -2.588357925415039,
+          -0.16628900170326233,
+          0.06817089021205902,
+          -3.8434269428253174,
+          0.5209589004516602
+        ],
+        [
+          -3.382073163986206,
+          0.9542407989501953,
+          -2.1063716411590576,
+          -0.22583726048469543,
+          0.8659036159515381,
+          -3.3405215740203857,
+          -0.42955222725868225
+        ],
+        [
+          -4.28160285949707,
+          -0.6317023038864136,
+          2.8752853870391846,
+          -0.6234456300735474,
+          -2.1306216716766357,
+          -2.0993146896362305,
+          -0.2786601483821869
+        ],
+        [
+          -1.8041324615478516,
+          -1.579227328300476,
+          -1.463643193244934,
+          1.6404370069503784,
+          -1.0980989933013916,
+          -1.0309643745422363,
+          -0.4531096816062927
+        ],
+        [
+          1.1499338150024414,
+          -3.363288640975952,
+          -3.606710433959961,
+          0.040263522416353226,
+          0.55472332239151,
+          -1.5547373294830322,
+          0.06147625297307968
+        ],
+        [
+          -3.5307891368865967,
+          -1.684526801109314,
+          -3.883406400680542,
+          -1.491606593132019,
+          5.288817405700684,
+          -2.2772305011749268,
+          -0.35200607776641846
+        ],
+        [
+          0.23023293912410736,
+          -2.959489345550537,
+          -2.7029380798339844,
+          0.8806586265563965,
+          -0.10702835768461227,
+          -0.8308314085006714,
+          -0.6622500419616699
+        ],
+        [
+          0.6311513185501099,
+          -3.798645496368408,
+          -3.5283524990081787,
+          0.2796555161476135,
+          0.5125659108161926,
+          0.09798502922058105,
+          -0.7409911155700684
+        ]
+      ],
+      "input_size": 48,
+      "normalization": {
+        "mean": 0.8239761590957642,
+        "std": 0.3558235764503479
+      },
+      "preprocessing": "binary-largest-component / train-median bbox / black-on-white",
+      "foreground_geometry": {
+        "width_fraction": 0.609375,
+        "height_fraction": 0.7578125,
+        "fit_partition": "tuning_train",
+        "fit_images": 4802,
+        "foreground_threshold": 128,
+        "statistic": "class-agnostic median relative foreground bounding-box width/height"
+      },
+      "note": "Inference only; these crops were not used to fit any parameter.",
+      "baseline_gray_inference": {
+        "available": true,
+        "source": [
+          "task_6/outputs/chars/char_01_gray.png",
+          "task_6/outputs/chars/char_02_gray.png",
+          "task_6/outputs/chars/char_03_gray.png",
+          "task_6/outputs/chars/char_04_gray.png",
+          "task_6/outputs/chars/char_05_gray.png",
+          "task_6/outputs/chars/char_06_gray.png",
+          "task_6/outputs/chars/char_07_gray.png",
+          "task_6/outputs/chars/char_08_gray.png",
+          "task_6/outputs/chars/char_09_gray.png",
+          "task_6/outputs/chars/char_10_gray.png"
+        ],
+        "expected_string": "HD44780A00",
+        "predicted_string": "AAAAAAAAAA",
+        "predicted_labels": [
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A",
+          "A"
+        ],
+        "correct_characters": 1,
+        "reference_character_accuracy": 0.1,
+        "scores": [
+          [
+            -8.411913871765137,
+            -1.2460757493972778,
+            -12.50260066986084,
+            -4.724391937255859,
+            9.33987045288086,
+            0.1758173406124115,
+            3.4327590465545654
+          ],
+          [
+            -8.217575073242188,
+            -0.9885635375976562,
+            -11.527719497680664,
+            -3.978142023086548,
+            8.393911361694336,
+            0.5399851202964783,
+            2.9167330265045166
+          ],
+          [
+            -8.940815925598145,
+            -0.7975641489028931,
+            -12.904651641845703,
+            -4.610787868499756,
+            8.256939888000488,
+            0.33566343784332275,
+            5.084421634674072
+          ],
+          [
+            -10.595257759094238,
+            -0.38253575563430786,
+            -14.109675407409668,
+            -4.311578273773193,
+            9.870863914489746,
+            -0.5602306127548218,
+            4.8921380043029785
+          ],
+          [
+            -9.18186092376709,
+            0.5288216471672058,
+            -12.255322456359863,
+            -4.99491024017334,
+            8.78980827331543,
+            -0.728156328201294,
+            4.588699817657471
+          ],
+          [
+            -9.124838829040527,
+            -0.7663979530334473,
+            -11.275670051574707,
+            -3.446512460708618,
+            8.352867126464844,
+            0.2952537536621094,
+            2.392216920852661
+          ],
+          [
+            -8.065084457397461,
+            -2.228111743927002,
+            -12.525410652160645,
+            -4.7612080574035645,
+            9.561727523803711,
+            0.6552358865737915,
+            3.7893869876861572
+          ],
+          [
+            -8.798346519470215,
+            -2.5693812370300293,
+            -13.870415687561035,
+            -5.846848487854004,
+            9.560349464416504,
+            1.6097310781478882,
+            4.7531843185424805
+          ],
+          [
+            -7.96469259262085,
+            -2.7640013694763184,
+            -12.277981758117676,
+            -4.085605621337891,
+            9.620381355285645,
+            0.29271411895751953,
+            3.688000202178955
+          ],
+          [
+            -6.605722904205322,
+            -2.4762909412384033,
+            -10.914702415466309,
+            -3.7888107299804688,
+            8.349041938781738,
+            0.5789929628372192,
+            2.9488375186920166
+          ]
+        ],
+        "input_size": 48,
+        "normalization": {
+          "mean": 0.8239761590957642,
+          "std": 0.3558235764503479
+        },
+        "preprocessing": "gray-invert / square-pad / resize",
+        "foreground_geometry": null,
+        "note": "Inference only; these crops were not used to fit any parameter."
+      },
+      "checkpoint_files": [
+        "cnn_48px_seed20268013.pt"
+      ],
+      "checkpoint_sha256": {
+        "cnn_48px_seed20268013.pt": "320d9fec12757089e1bc7bfdd17ada4cf29650f03328cbdd7655614ef4303c8f"
+      },
+      "adaptation_policy": "Single predefined label-free rule: largest binary component, median tuning-train bbox width/height, centered white canvas. No target label, target score, or held-out test measurement selects this rule. Original gray baseline is retained. This is an exploratory target-domain check."
+    },
+    "mlp": {
+      "available": true,
+      "source": [
+        "task_6/outputs/chars/char_01_bin.png",
+        "task_6/outputs/chars/char_02_bin.png",
+        "task_6/outputs/chars/char_03_bin.png",
+        "task_6/outputs/chars/char_04_bin.png",
+        "task_6/outputs/chars/char_05_bin.png",
+        "task_6/outputs/chars/char_06_bin.png",
+        "task_6/outputs/chars/char_07_bin.png",
+        "task_6/outputs/chars/char_08_bin.png",
+        "task_6/outputs/chars/char_09_bin.png",
+        "task_6/outputs/chars/char_10_bin.png"
+      ],
+      "expected_string": "HD44780A00",
+      "predicted_string": "HD44780A00",
+      "predicted_labels": [
+        "H",
+        "D",
+        "4",
+        "4",
+        "7",
+        "8",
+        "0",
+        "A",
+        "0",
+        "0"
+      ],
+      "correct_characters": 10,
+      "reference_character_accuracy": 1.0,
+      "scores": [
+        [
+          0.028911802917718887,
+          -0.05669816955924034,
+          0.011026740074157715,
+          0.13075850903987885,
+          -0.007641695439815521,
+          -0.09293697774410248,
+          0.8482396602630615
+        ],
+        [
+          0.3396628499031067,
+          -0.031647831201553345,
+          -0.03869352117180824,
+          0.015695150941610336,
+          0.0032215206883847713,
+          0.42551177740097046,
+          0.05436054617166519
+        ],
+        [
+          0.08071702718734741,
+          0.7560844421386719,
+          -0.01503888051956892,
+          -0.0502932034432888,
+          0.10550692677497864,
+          -0.05180959403514862,
+          0.017463751137256622
+        ],
+        [
+          0.010028540156781673,
+          0.7945026159286499,
+          -0.014955481514334679,
+          0.032428935170173645,
+          0.08150823414325714,
+          -0.0006025502225384116,
+          -0.020647482946515083
+        ],
+        [
+          -0.062381770461797714,
+          0.19022226333618164,
+          0.8845433592796326,
+          0.01390819437801838,
+          -0.12329568713903427,
+          -0.05292470380663872,
+          0.0901646539568901
+        ],
+        [
+          -0.06202472746372223,
+          -0.08574815839529037,
+          0.030620550736784935,
+          0.6215667724609375,
+          -0.01481296680867672,
+          0.016676384955644608,
+          0.17408499121665955
+        ],
+        [
+          0.6370186805725098,
+          -0.00019055543816648424,
+          -0.002862693276256323,
+          -0.04270239919424057,
+          -0.024941865354776382,
+          0.17734180390834808,
+          0.02143828570842743
+        ],
+        [
+          -0.03101673722267151,
+          -0.011854193173348904,
+          0.03240925818681717,
+          0.02327200397849083,
+          0.8318963050842285,
+          0.022557366639375687,
+          0.006792447529733181
+        ],
+        [
+          0.8292352557182312,
+          0.003693893551826477,
+          0.004830300807952881,
+          -0.06846797466278076,
+          -0.030731070786714554,
+          0.029399871826171875,
+          0.015319621190428734
+        ],
+        [
+          0.7159218788146973,
+          -0.02647778019309044,
+          -0.006278428714722395,
+          -0.027810342609882355,
+          -0.003055413719266653,
+          0.1691696047782898,
+          0.019544776529073715
+        ]
+      ],
+      "input_size": 32,
+      "normalization": {
+        "mean": 0.8240094780921936,
+        "std": 0.3436231315135956
+      },
+      "preprocessing": "binary-largest-component / train-median bbox / black-on-white",
+      "foreground_geometry": {
+        "width_fraction": 0.609375,
+        "height_fraction": 0.7578125,
+        "fit_partition": "tuning_train",
+        "fit_images": 4802,
+        "foreground_threshold": 128,
+        "statistic": "class-agnostic median relative foreground bounding-box width/height"
+      },
+      "note": "Inference only; these crops were not used to fit any parameter.",
+      "baseline_gray_inference": {
+        "available": true,
+        "source": [
+          "task_6/outputs/chars/char_01_gray.png",
+          "task_6/outputs/chars/char_02_gray.png",
+          "task_6/outputs/chars/char_03_gray.png",
+          "task_6/outputs/chars/char_04_gray.png",
+          "task_6/outputs/chars/char_05_gray.png",
+          "task_6/outputs/chars/char_06_gray.png",
+          "task_6/outputs/chars/char_07_gray.png",
+          "task_6/outputs/chars/char_08_gray.png",
+          "task_6/outputs/chars/char_09_gray.png",
+          "task_6/outputs/chars/char_10_gray.png"
+        ],
+        "expected_string": "HD44780A00",
+        "predicted_string": "HD447H0A00",
+        "predicted_labels": [
+          "H",
+          "D",
+          "4",
+          "4",
+          "7",
+          "H",
+          "0",
+          "A",
+          "0",
+          "0"
+        ],
+        "correct_characters": 9,
+        "reference_character_accuracy": 0.9,
+        "scores": [
+          [
+            0.048502326011657715,
+            -0.04137125238776207,
+            -0.007596913725137711,
+            0.02738332375884056,
+            0.00488644652068615,
+            -0.0690004974603653,
+            0.6516282558441162
+          ],
+          [
+            0.1847848743200302,
+            -0.006975160446017981,
+            -0.019246719777584076,
+            0.03552260249853134,
+            -0.03054516762495041,
+            0.3149525821208954,
+            0.10407837480306625
+          ],
+          [
+            0.059657808393239975,
+            0.48783764243125916,
+            0.05136127397418022,
+            -0.02083754539489746,
+            -0.006873731967061758,
+            -0.054265912622213364,
+            0.07733610272407532
+          ],
+          [
+            0.08867517113685608,
+            0.34120893478393555,
+            0.052735261619091034,
+            -0.019777920097112656,
+            0.043622590601444244,
+            -0.005313163157552481,
+            0.091318279504776
+          ],
+          [
+            -0.04627113789319992,
+            0.012246246449649334,
+            0.4627079963684082,
+            -0.05821765214204788,
+            0.01437312364578247,
+            0.05954858288168907,
+            0.05113409087061882
+          ],
+          [
+            0.06605689227581024,
+            -0.020747069269418716,
+            0.025450721383094788,
+            0.20527158677577972,
+            -0.04546716436743736,
+            0.07080750167369843,
+            0.2862966060638428
+          ],
+          [
+            0.40434786677360535,
+            0.002483571646735072,
+            -0.016554920002818108,
+            0.004381354432553053,
+            -0.047839969396591187,
+            0.05442234128713608,
+            0.0612497441470623
+          ],
+          [
+            -0.04980693757534027,
+            -0.06932568550109863,
+            0.037307605147361755,
+            -0.010778437368571758,
+            0.4019131362438202,
+            0.05633112043142319,
+            0.16238948702812195
+          ],
+          [
+            0.35574114322662354,
+            0.0028538282494992018,
+            -0.029134836047887802,
+            -0.052447132766246796,
+            0.0035837660543620586,
+            0.23416003584861755,
+            0.07631289213895798
+          ],
+          [
+            0.6288438439369202,
+            -0.00854795053601265,
+            -0.021674688905477524,
+            -0.0020270920358598232,
+            -0.0292305126786232,
+            0.08136755228042603,
+            0.12160125374794006
+          ]
+        ],
+        "input_size": 32,
+        "normalization": {
+          "mean": 0.8240094780921936,
+          "std": 0.3436231315135956
+        },
+        "preprocessing": "gray-invert / square-pad / resize",
+        "foreground_geometry": null,
+        "note": "Inference only; these crops were not used to fit any parameter."
+      },
+      "checkpoint_files": [
+        "mlp_32px_seed20268014.pt",
+        "mlp_32px_seed20268051.pt",
+        "mlp_32px_seed20268088.pt"
+      ],
+      "checkpoint_sha256": {
+        "mlp_32px_seed20268014.pt": "104a89d2cff32628cbeb6d7360eb37b98e414b3a99df94ae19de6995f83a2674",
+        "mlp_32px_seed20268051.pt": "25e6e9c0d662cc63a1c8d712d7a1f53135d42bbc251fd6976bb8ba4f0fb676fb",
+        "mlp_32px_seed20268088.pt": "102577a7f8d1ee85cac62ae2186cb0dd4f8c135c02d3233137eedc3487864cde"
+      },
+      "adaptation_policy": "Single predefined label-free rule: largest binary component, median tuning-train bbox width/height, centered white canvas. No target label, target score, or held-out test measurement selects this rule. Original gray baseline is retained. This is an exploratory target-domain check."
+    }
+  },
+  "limitations": [
+    "Duplicate grouping uses exact decoded grayscale pixels; visually similar but non-identical files may remain across partitions.",
+    "The supplied dataset has balanced labels and centered synthetic glyphs; results may not transfer to differently segmented real chip characters."
+  ]
+}

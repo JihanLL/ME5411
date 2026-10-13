@@ -1,0 +1,9 @@
+{
+  "subimage": "task_3/outputs/task3_subimage.png",
+  "smoothing_size": 5,
+  "otsu_threshold": 125.0,
+  "adaptive_window": 41,
+  "adaptive_offset": 25.0,
+  "chosen_method": "adaptive mean threshold, window=41, offset=+25",
+  "output": "task4_binary.png"
+}
