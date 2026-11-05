@@ -255,6 +255,27 @@ class CharacterCNN(nn.Module):
         return self.classifier(self.features(inputs).flatten(1))
 
 
+def build_model(
+    model_kind: str, side: int, n_classes: int, mlp_width: int = 512
+) -> nn.Module:
+    """Construct one of the two Task-7 architectures."""
+    if model_kind == "mlp":
+        return RegressionMLP(side, n_classes, width=mlp_width)
+    if model_kind == "cnn":
+        return CharacterCNN(n_classes)
+    raise ValueError("Unknown model kind: {}".format(model_kind))
+
+
+def checkpoint_mlp_width(payload: Dict[str, Any]) -> int:
+    """Read MLP width while remaining compatible with CNN and old checkpoints."""
+    value = payload.get("mlp_width")
+    if value is None:
+        return 512
+    if isinstance(value, bool) or not isinstance(value, int) or value < 2:
+        raise ValueError("checkpoint mlp_width must be an integer of at least 2")
+    return value
+
+
 def one_hot(labels: torch.Tensor, n_classes: int) -> torch.Tensor:
     return torch.nn.functional.one_hot(labels, num_classes=n_classes).float()
 
@@ -322,7 +343,7 @@ def train_candidate(
     seed_everything(seed)
     model: nn.Module
     regression = model_kind == "mlp"
-    model = RegressionMLP(side, len(CLASS_NAMES)) if regression else CharacterCNN(len(CLASS_NAMES))
+    model = build_model(model_kind, side, len(CLASS_NAMES), args.mlp_width)
     model.to(device)
     train_loader = make_loader(train_dataset, args.batch_size, True, seed, args.workers)
     validation_loader = make_loader(validation_dataset, args.batch_size * 2, False, seed, args.workers)
@@ -383,6 +404,7 @@ def train_candidate(
     model.load_state_dict(best_state)
     return {
         "model_kind": model_kind,
+        "mlp_width": args.mlp_width if model_kind == "mlp" else None,
         "run_seed": seed,
         "input_size": side,
         "learning_rate": learning_rate,
@@ -408,7 +430,7 @@ def train_final_model(
 ) -> Tuple[nn.Module, float]:
     seed_everything(seed)
     regression = model_kind == "mlp"
-    model = RegressionMLP(side, len(CLASS_NAMES)) if regression else CharacterCNN(len(CLASS_NAMES))
+    model = build_model(model_kind, side, len(CLASS_NAMES), args.mlp_width)
     model.to(device)
     loader = make_loader(train_dataset, args.batch_size, True, seed, args.workers)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=args.weight_decay)
@@ -699,14 +721,19 @@ def validate_checkpoint_metadata(
         raise ValueError("Checkpoint model kind/class ordering mismatch: {}".format(checkpoint))
     side = payload.get("input_size")
     normalization = payload.get("normalization")
+    mlp_width = checkpoint_mlp_width(payload)
     if not isinstance(side, int) or side < 4:
         raise ValueError("Invalid checkpoint input_size: {}".format(checkpoint))
     if not isinstance(normalization, dict) or set(normalization) != {"mean", "std"}:
         raise ValueError("Invalid checkpoint normalization fields: {}".format(checkpoint))
     if not all(isinstance(normalization[key], (float, int)) and math.isfinite(normalization[key]) for key in ("mean", "std")) or normalization["std"] <= 0:
         raise ValueError("Checkpoint normalization must be finite with positive std: {}".format(checkpoint))
-    if previous is not None and (side != previous["input_size"] or normalization != previous["normalization"]):
-        raise ValueError("Ensemble checkpoint input size/normalization mismatch: {}".format(checkpoint))
+    if previous is not None and (
+        side != previous["input_size"]
+        or normalization != previous["normalization"]
+        or mlp_width != checkpoint_mlp_width(previous)
+    ):
+        raise ValueError("Ensemble checkpoint metadata mismatch: {}".format(checkpoint))
 
 
 def evaluate_target_checkpoints(
@@ -738,7 +765,12 @@ def evaluate_target_checkpoints(
                 if payload["input_size"] != expected["input_size"] or (expected.get("normalization") is not None and payload["normalization"] != expected["normalization"]):
                     raise ValueError("Checkpoint metadata does not match saved experiment: {}".format(checkpoint))
             side = int(payload["input_size"])
-            model = CharacterCNN(len(CLASS_NAMES)) if model_kind == "cnn" else RegressionMLP(side, len(CLASS_NAMES))
+            model = build_model(
+                model_kind,
+                side,
+                len(CLASS_NAMES),
+                checkpoint_mlp_width(payload),
+            )
             model.load_state_dict(payload["state_dict"])
             model.to(device)
             models.append(model)
@@ -829,10 +861,18 @@ def main() -> None:
     parser.add_argument("--epochs-tune", type=int, default=18)
     parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
+    parser.add_argument(
+        "--mlp-width",
+        type=int,
+        default=512,
+        help="Width of the first MLP hidden layer; the second uses half (default: 512)",
+    )
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--smoke", action="store_true", help="Run a short one-resolution pipeline check")
     parser.add_argument("--inference-only", action="store_true", help="Refresh Figure-1 predictions from saved selected checkpoints; preserve held-out metrics")
     args = parser.parse_args()
+    if args.mlp_width < 2:
+        parser.error("--mlp-width must be at least 2")
     if args.smoke:
         args.epochs_tune = min(args.epochs_tune, 2)
         args.patience = 2
@@ -951,6 +991,7 @@ def main() -> None:
                     "normalization": normalization,
                     "state_dict": model.state_dict(),
                     "seed": fit_seed,
+                    "mlp_width": args.mlp_width if model_kind == "mlp" else None,
                 },
                 checkpoint,
             )
@@ -966,6 +1007,7 @@ def main() -> None:
         metrics.update(
             {
                 "model": "CNN" if model_kind == "cnn" else "MLP one-hot regression",
+                "mlp_width": args.mlp_width if model_kind == "mlp" else None,
                 "input_size": side,
                 "selected_learning_rate": float(choice["learning_rate"]),
                 "selected_epochs": chosen_epochs,
@@ -994,6 +1036,7 @@ def main() -> None:
         comparison_rows.append(
             {
                 "method": row["model"],
+                "mlp_width": row["mlp_width"],
                 "input_size": row["input_size"],
                 "test_accuracy": row["accuracy"],
                 "macro_precision": row["macro_precision"],
@@ -1031,6 +1074,7 @@ def main() -> None:
         },
         "tuning_grid": {
             "input_sizes": sides, "learning_rates": learning_rates, "weight_decay": args.weight_decay,
+            "mlp_width": args.mlp_width,
             "batch_size": args.batch_size, "max_epochs": args.epochs_tune, "early_stopping_patience": args.patience,
             "candidate_seed_rule": "seed + side*100 + int(lr*100000) + (1 for MLP, 0 for CNN)",
             "selection": "maximize validation accuracy; ties: smaller input side, then smaller learning rate",
@@ -1046,12 +1090,15 @@ def main() -> None:
                 "selected_epochs": int(value["best_epoch"]),
                 "validation_members": 1,
                 "run_seed": int(value["run_seed"]),
+                "mlp_width": value["mlp_width"],
             }
             for key, value in selected.items()
         },
         "architectures": {
             "cnn": "Conv(1,32)-BN-ReLU x2-MaxPool; Conv(32,64)-BN-ReLU x2-MaxPool; Conv(64,128)-BN-ReLU; global average pool; linear 7 logits; cross-entropy",
-            "mlp": "Flatten-(Linear 512-BN-GELU-Dropout 0.25)-(Linear 256-BN-GELU-Dropout 0.25)-Linear 7 scores; one-hot target MSE regression; class is argmax(score)",
+            "mlp": "Flatten-(Linear {0}-BN-GELU-Dropout 0.25)-(Linear {1}-BN-GELU-Dropout 0.25)-Linear 7 scores; one-hot target MSE regression; class is argmax(score)".format(
+                args.mlp_width, args.mlp_width // 2
+            ),
         },
         "test_results": final_results,
         "target_predictions": target_predictions,
