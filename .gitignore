@@ -1,0 +1,27 @@
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# OS and editor metadata
+.DS_Store
+Thumbs.db
+*.swp
+
+# LaTeX intermediate files (the final PDF and bibliography stay tracked)
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+
+# Task 7 scratch runs; keep task_7/outputs/ as the formal result bundle
+/task_7/outputs_smoke*/
+/task_7/outputs_repair_smoke/
+/task_7/outputs_mlp_width*/

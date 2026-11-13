@@ -110,6 +110,19 @@ epochs, and one MLP member. It is not the experiment reported in `main.pdf`.
 Always give the smoke output directory explicitly: the default `--output`
 points to the formal `task_7/outputs/` directory.
 
+The MLP hidden width defaults to 512, matching the supplied experiment.  An
+optional smaller-capacity ablation can be run without changing that default or
+overwriting the supplied results:
+
+```bash
+python task_7/task_7.py --data dataset_2026 --mlp-width 256 \
+  --output task_7/outputs_mlp_width256
+```
+
+The selected width is stored in the tuning records, metrics, and checkpoints
+so that inference reconstructs the matching architecture.  Older checkpoints
+without this field continue to load as width 512.
+
 Each output directory contains:
 
 | Artifact | Purpose |
